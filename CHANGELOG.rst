@@ -37,6 +37,11 @@ Fixes
   started issuing a cryptic "No sending domain specified" error for this case; with
   this fix, Anymail will now treat it as an unsupported feature.
 
+Other
+~~~~~
+
+* Move CI testing to GitHub Actions (and stop using Travis-CI).
+
 
 
 v8.1

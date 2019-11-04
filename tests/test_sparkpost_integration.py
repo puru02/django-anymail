@@ -9,20 +9,20 @@ from anymail.message import AnymailMessage
 
 from .utils import AnymailTestMixin, sample_image_path
 
-SPARKPOST_TEST_API_KEY = os.getenv('SPARKPOST_TEST_API_KEY')
+ANYMAIL_TEST_SPARKPOST_API_KEY = os.getenv('ANYMAIL_TEST_SPARKPOST_API_KEY')
 
 
 @tag('sparkpost', 'live')
-@unittest.skipUnless(SPARKPOST_TEST_API_KEY,
-                     "Set SPARKPOST_TEST_API_KEY environment variable "
+@unittest.skipUnless(ANYMAIL_TEST_SPARKPOST_API_KEY,
+                     "Set ANYMAIL_TEST_SPARKPOST_API_KEY environment variable "
                      "to run SparkPost integration tests")
-@override_settings(ANYMAIL_SPARKPOST_API_KEY=SPARKPOST_TEST_API_KEY,
+@override_settings(ANYMAIL_SPARKPOST_API_KEY=ANYMAIL_TEST_SPARKPOST_API_KEY,
                    EMAIL_BACKEND="anymail.backends.sparkpost.EmailBackend")
 class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
     """SparkPost API integration tests
 
     These tests run against the **live** SparkPost API, using the
-    environment variable `SPARKPOST_TEST_API_KEY` as the API key
+    environment variable `ANYMAIL_TEST_SPARKPOST_API_KEY` as the API key
     If that variable is not set, these tests won't run.
 
     SparkPost doesn't offer a test mode -- it tries to send everything
