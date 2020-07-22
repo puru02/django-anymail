@@ -28,7 +28,10 @@ Release history
 vNext
 -----
 
-*Unreleased changes in master*
+*Unreleased changes in development*
+
+This is an extended support release. Anymail vNext will receive security updates
+and fixes for any breaking ESP API changes through at least July, 2021.
 
 Fixes
 ~~~~~
@@ -36,6 +39,19 @@ Fixes
 * **Amazon SES:** Fix bcc, which wasn't working at all on non-template sends.
   (Thanks to `@mwheels`_ for reporting the issue.)
 
+Features
+~~~~~~~~
+
+* Test against Django 3.1 release candidates
+
+
+Deprecations
+~~~~~~~~~~~~
+
+*  This will be the last Anymail release to support Django 1.11 and Python 2.7.
+
+If these deprecations affect you and you cannot upgrade, set your requirements to
+`django-anymail~=7.2` (a "compatible release" specifier, equivalent to `>=7.2,==7.*`).
 
 
 v7.1
