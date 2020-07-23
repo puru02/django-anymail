@@ -1,3 +1,5 @@
+from email.header import Header
+
 from six.moves.urllib.parse import quote
 
 from ..exceptions import AnymailRequestsAPIError
@@ -158,12 +160,16 @@ class MailjetPayload(RequestsPayload):
 
     def _format_email_for_mailjet(self, email):
         """Return EmailAddress email converted to a string that Mailjet can parse properly"""
-        # Workaround Mailjet 3.0 bug parsing display-name with commas
+        # Workaround Mailjet 3.0 bug parsing RFC-2822 quoted display-name with commas
         # (see test_comma_in_display_name in test_mailjet_backend for details)
         if "," in email.display_name:
-            return EmailAddress(email.display_name.encode('utf-8'), email.addr_spec).formataddr('utf-8')
-        else:
-            return email.address
+            # Force MIME "encoded-word" encoding on name, to hide comma from Mailjet.
+            # We just want the RFC-2047 quoting, not the header wrapping (which will
+            # be Mailjet's responsibility), so set a huge maxlinelen.
+            encoded_name = Header(email.display_name.encode('utf-8'),
+                                  charset='utf-8', maxlinelen=1000000).encode()
+            email = EmailAddress(encoded_name, email.addr_spec)
+        return email.address
 
     #
     # Payload construction

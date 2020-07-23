@@ -106,13 +106,19 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         # (This shouldn't be necessary in Mailjet 3.1, where Name becomes a separate json field for Cc/Bcc.)
         msg = mail.EmailMessage(
             'Subject', 'Message', '"Example, Inc." <from@example.com>',
-            ['"Recipient, Ltd." <to@example.com>'])
+            ['"Recipient, Ltd." <to@example.com>'],
+            cc=['"This is a very long display name, intended to test our workaround does not insert carriage returns'
+                ' or newlines into the encoded value, which would cause other problems" <long@example.com']
+        )
         msg.send()
         data = self.get_api_call_json()
         self.assertEqual(data['FromName'], 'Example, Inc.')
         self.assertEqual(data['FromEmail'], 'from@example.com')
         # self.assertEqual(data['To'], '"Recipient, Ltd." <to@example.com>')  # this doesn't work
         self.assertEqual(data['To'], '=?utf-8?q?Recipient=2C_Ltd=2E?= <to@example.com>')  # workaround
+        self.assertEqual(data['Cc'], '=?utf-8?q?This_is_a_very_long_display_name=2C_intended_to_test_our_workaround'
+                                     '_does_not_insert_carriage_returns_or_newlines_into_the_encoded_value=2C_which'
+                                     '_would_cause_other_problems?= <long@example.com>')
 
     def test_email_message(self):
         email = mail.EmailMessage(

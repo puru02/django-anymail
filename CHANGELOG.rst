@@ -39,6 +39,10 @@ Fixes
 * **Amazon SES:** Fix bcc, which wasn't working at all on non-template sends.
   (Thanks to `@mwheels`_ for reporting the issue.)
 
+* **Mailjet:** Fix TypeError when sending to or from addresses with display names
+  containing commas (introduced in Django 2.2.15, 3.0.9, and 3.1).
+
+
 Features
 ~~~~~~~~
 
