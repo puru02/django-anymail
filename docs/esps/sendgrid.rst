@@ -426,10 +426,10 @@ If you want to use Anymail's normalized :attr:`~anymail.inbound.AnymailInboundMe
 :attr:`~anymail.inbound.AnymailInboundMessage.spam_score` attributes, be sure to enable the "Check
 incoming emails for spam" checkbox.
 
-You have a choice for SendGrid's "POST the raw, full MIME message" checkbox. Anymail will handle
-either option (and you can change it at any time). Enabling raw MIME will give the most accurate
-representation of *any* received email (including complex forms like multi-message mailing list
-digests). But disabling it *may* use less memory while processing messages with many large attachments.
+In most cases, you should enable SendGrid's "POST the raw, full MIME message" checkbox.
+Anymail should work either way (and you can change the option at any time), but enabling
+raw MIME will give the most accurate representation of *any* received email (including
+complex forms like multi-message mailing list digests).
 
 .. _Inbound Parse Webhook:
    https://sendgrid.com/docs/Classroom/Basics/Inbound_Parse_Webhook/setting_up_the_inbound_parse_webhook.html

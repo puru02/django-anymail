@@ -324,3 +324,45 @@ class ClientWithCsrfChecks(Client):
     def __init__(self, **defaults):
         super(ClientWithCsrfChecks, self).__init__(
             enforce_csrf_checks=True, **defaults)
+
+
+# dedent for bytestrs
+# https://stackoverflow.com/a/39841195/647002
+_whitespace_only_re = re.compile(b'^[ \t]+$', re.MULTILINE)
+_leading_whitespace_re = re.compile(b'(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
+
+
+def dedent_bytes(text):
+    """textwrap.dedent, but for bytes"""
+    # Look for the longest leading string of spaces and tabs common to
+    # all lines.
+    margin = None
+    text = _whitespace_only_re.sub(b'', text)
+    indents = _leading_whitespace_re.findall(text)
+    for indent in indents:
+        if margin is None:
+            margin = indent
+
+        # Current line more deeply indented than previous winner:
+        # no change (previous winner is still on top).
+        elif indent.startswith(margin):
+            pass
+
+        # Current line consistent with and no deeper than previous winner:
+        # it's the new winner.
+        elif margin.startswith(indent):
+            margin = indent
+
+        # Find the largest common whitespace between current line
+        # and previous winner.
+        else:
+            for i, (x, y) in enumerate(zip(margin, indent)):
+                if x != y:
+                    margin = margin[:i]
+                    break
+            else:
+                margin = margin[:len(indent)]
+
+    if margin:
+        text = re.sub(b'(?m)^' + margin, b'', text)
+    return text

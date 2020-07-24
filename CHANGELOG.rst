@@ -42,6 +42,11 @@ Fixes
 * **Mailjet:** Fix TypeError when sending to or from addresses with display names
   containing commas (introduced in Django 2.2.15, 3.0.9, and 3.1).
 
+* **SendGrid:** Fix UnicodeError in inbound webhook, when receiving message using
+  charsets other than utf-8, and *not* using SendGrid's "post raw" inbound parse
+  option. Also update docs to recommend "post raw" with SendGrid inbound. (Thanks to
+  `@tcourtqtm`_ for reporting the issue.)
+
 
 Features
 ~~~~~~~~
@@ -1104,6 +1109,7 @@ Features
 .. _@sebbacon: https://github.com/sebbacon
 .. _@swrobel: https://github.com/swrobel
 .. _@Thorbenl: https://github.com/Thorbenl
+.. _@tcourtqtm: https://github.com/tcourtqtm
 .. _@varche1: https://github.com/varche1
 .. _@vgrebenschikov: https://github.com/vgrebenschikov
 .. _@yourcelf: https://github.com/yourcelf

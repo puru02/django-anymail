@@ -4,6 +4,7 @@ from datetime import datetime
 from django.utils.timezone import utc
 
 from .base import AnymailBaseWebhookView
+from .._email_compat import EmailBytesParser
 from ..inbound import AnymailInboundMessage
 from ..signals import inbound, tracking, AnymailInboundEvent, AnymailTrackingEvent, EventType, RejectReason
 
@@ -131,6 +132,9 @@ class SendGridInboundWebhookView(AnymailBaseWebhookView):
         # Inbound uses the entire Django request as esp_event, because we need POST and FILES.
         # Note that request.POST is case-sensitive (unlike email.message.Message headers).
         esp_event = request
+        # Must access body before any POST fields, or it won't be available if we need
+        # it later (see text_charset and html_charset handling below).
+        _ensure_body_is_available_later = request.body  # noqa: F841
         if 'headers' in request.POST:
             # Default (not "Send Raw") inbound fields
             message = self.message_from_sendgrid_parsed(esp_event)
@@ -183,11 +187,31 @@ class SendGridInboundWebhookView(AnymailBaseWebhookView):
                 for att_id in sorted(attachment_info.keys())
             ]
 
+        default_charset = request.POST.encoding.lower()  # (probably utf-8)
+        text = request.POST.get('text')
+        text_charset = charsets.get('text', default_charset).lower()
+        html = request.POST.get('html')
+        html_charset = charsets.get('html', default_charset).lower()
+        if (text and text_charset != default_charset) or (html and html_charset != default_charset):
+            # Django has parsed text and/or html fields using the wrong charset.
+            # We need to re-parse the raw form data and decode each field separately,
+            # using the indicated charsets. The email package parses multipart/form-data
+            # retaining bytes content. (In theory, we could instead just change
+            # request.encoding and access the POST fields again, per Django docs,
+            # but that seems to be have bugs around the cached request._files.)
+            raw_data = b"Content-Type: %s\r\n\r\n%s" % (
+                request.META['CONTENT_TYPE'].encode('ascii'),
+                request.body)
+            parsed_parts = EmailBytesParser().parsebytes(raw_data).get_payload()
+            for part in parsed_parts:
+                name = part.get_param('name', header='content-disposition')
+                if name == 'text':
+                    text = part.get_payload(decode=True).decode(text_charset)
+                elif name == 'html':
+                    html = part.get_payload(decode=True).decode(html_charset)
+                # (subject, from, to, etc. are parsed from raw headers field,
+                # so no need to worry about their separate POST field charsets)
+
         return AnymailInboundMessage.construct(
             raw_headers=request.POST.get('headers', ""),  # includes From, To, Cc, Subject, etc.
-            text=request.POST.get('text', None),
-            text_charset=charsets.get('text', 'utf-8'),
-            html=request.POST.get('html', None),
-            html_charset=charsets.get('html', 'utf-8'),
-            attachments=attachments,
-        )
+            text=text, html=html, attachments=attachments)
