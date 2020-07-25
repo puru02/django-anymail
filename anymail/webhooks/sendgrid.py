@@ -199,9 +199,11 @@ class SendGridInboundWebhookView(AnymailBaseWebhookView):
             # retaining bytes content. (In theory, we could instead just change
             # request.encoding and access the POST fields again, per Django docs,
             # but that seems to be have bugs around the cached request._files.)
-            raw_data = b"Content-Type: %s\r\n\r\n%s" % (
-                request.META['CONTENT_TYPE'].encode('ascii'),
-                request.body)
+            raw_data = b"".join([
+                b"Content-Type: ", request.META['CONTENT_TYPE'].encode('ascii'),
+                b"\r\n\r\n",
+                request.body
+            ])
             parsed_parts = EmailBytesParser().parsebytes(raw_data).get_payload()
             for part in parsed_parts:
                 name = part.get_param('name', header='content-disposition')
