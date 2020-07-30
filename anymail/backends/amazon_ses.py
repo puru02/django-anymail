@@ -45,6 +45,8 @@ class EmailBackend(AnymailBaseBackend):
         except BOTO_BASE_ERRORS:
             if not self.fail_silently:
                 raise
+        else:
+            return True  # created client
 
     def close(self):
         if self.client is None:

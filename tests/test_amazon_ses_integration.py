@@ -146,8 +146,9 @@ class AmazonSESBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
         }
     })
     def test_invalid_aws_credentials(self):
-        with self.assertRaises(AnymailAPIError) as cm:
-            self.message.send()
-        err = cm.exception
         # Make sure the exception message includes AWS's response:
-        self.assertIn("The security token included in the request is invalid", str(err))
+        with self.assertRaisesMessage(
+            AnymailAPIError,
+            "The security token included in the request is invalid"
+        ):
+            self.message.send()
