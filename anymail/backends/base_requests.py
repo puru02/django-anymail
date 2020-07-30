@@ -76,7 +76,7 @@ class AnymailRequestsBackend(AnymailBaseBackend):
             exc_class = type('AnymailRequestsAPIError', (AnymailRequestsAPIError, type(err)), {})
             raise exc_class(
                 "Error posting to %s:" % params.get('url', '<missing url>'),
-                raised_from=err, email_message=message, payload=payload)
+                email_message=message, payload=payload) from err
         self.raise_for_status(response, payload, message)
         return response
 

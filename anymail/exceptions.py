@@ -20,14 +20,12 @@ class AnymailError(Exception):
           backend: the backend instance involved
           payload: data arg (*not* json-stringified) for the ESP send call
           response: requests.Response from the send call
-          raised_from: original/wrapped Exception
           esp_name: what to call the ESP (read from backend if provided)
         """
         self.backend = kwargs.pop('backend', None)
         self.email_message = kwargs.pop('email_message', None)
         self.payload = kwargs.pop('payload', None)
         self.status_code = kwargs.pop('status_code', None)
-        self.raised_from = kwargs.pop('raised_from', None)
         self.esp_name = kwargs.pop('esp_name',
                                    self.backend.esp_name if self.backend else None)
         if isinstance(self, HTTPError):
@@ -40,7 +38,7 @@ class AnymailError(Exception):
     def __str__(self):
         parts = [
             " ".join([str(arg) for arg in self.args]),
-            self.describe_raised_from(),
+            self.describe_cause(),
             self.describe_send(),
             self.describe_response(),
         ]
@@ -85,11 +83,11 @@ class AnymailError(Exception):
                 pass
         return description
 
-    def describe_raised_from(self):
-        """Return the original exception"""
-        if self.raised_from is None:
+    def describe_cause(self):
+        """Describe the original exception"""
+        if self.__cause__ is None:
             return None
-        return ''.join(format_exception_only(type(self.raised_from), self.raised_from)).strip()
+        return ''.join(format_exception_only(type(self.__cause__), self.__cause__)).strip()
 
 
 class AnymailAPIError(AnymailError):

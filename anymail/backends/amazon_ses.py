@@ -66,7 +66,7 @@ class EmailBackend(AnymailBaseBackend):
         except BOTO_BASE_ERRORS as err:
             # ClientError has a response attr with parsed json error response (other errors don't)
             raise AnymailAPIError(str(err), backend=self, email_message=message, payload=payload,
-                                  response=getattr(err, 'response', None), raised_from=err)
+                                  response=getattr(err, 'response', None)) from err
         return response
 
     def parse_recipient_status(self, response, payload, message):

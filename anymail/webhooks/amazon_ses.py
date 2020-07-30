@@ -47,7 +47,7 @@ class AmazonSESBaseWebhookView(AnymailBaseWebhookView):
                 body = request.body.decode(request.encoding or 'utf-8')
                 request._sns_message = json.loads(body)
             except (TypeError, ValueError, UnicodeDecodeError) as err:
-                raise AnymailAPIError("Malformed SNS message body %r" % request.body, raised_from=err)
+                raise AnymailAPIError("Malformed SNS message body %r" % request.body) from err
         return request._sns_message
 
     def validate_request(self, request):
@@ -305,7 +305,7 @@ class AmazonSESInboundWebhookView(AmazonSESBaseWebhookView):
                 raise AnymailBotoClientAPIError(
                     "Anymail AmazonSESInboundWebhookView couldn't download S3 object '{bucket_name}:{object_key}'"
                     "".format(bucket_name=bucket_name, object_key=object_key),
-                    raised_from=err)
+                    client_error=err)
             finally:
                 content.close()
         else:
@@ -340,12 +340,10 @@ class AmazonSESInboundWebhookView(AmazonSESBaseWebhookView):
 
 class AnymailBotoClientAPIError(AnymailAPIError, ClientError):
     """An AnymailAPIError that is also a Boto ClientError"""
-    def __init__(self, *args, **kwargs):
-        raised_from = kwargs.pop('raised_from')
-        assert isinstance(raised_from, ClientError)
-        assert len(kwargs) == 0  # can't support other kwargs
+    def __init__(self, *args, client_error):
+        assert isinstance(client_error, ClientError)
         # init self as boto ClientError (which doesn't cooperatively subclass):
-        super().__init__(error_response=raised_from.response, operation_name=raised_from.operation_name)
+        super().__init__(error_response=client_error.response, operation_name=client_error.operation_name)
+        self.__cause__ = client_error
         # emulate AnymailError init:
         self.args = args
-        self.raised_from = raised_from

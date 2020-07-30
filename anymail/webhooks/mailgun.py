@@ -45,8 +45,7 @@ class MailgunBaseWebhookView(AnymailBaseWebhookView):
                 signature = signature_block['signature']
             except (KeyError, ValueError, UnicodeDecodeError) as err:
                 raise AnymailWebhookValidationFailure(
-                    "Mailgun webhook called with invalid payload format",
-                    raised_from=err)
+                    "Mailgun webhook called with invalid payload format") from err
         else:
             # Legacy webhook: signature fields are interspersed with other POST data
             try:
