@@ -59,10 +59,10 @@ class EmailBackend(AnymailRequestsBackend):
                     message_id = str(item['MessageID'])
                     email = item['Email']
                     recipient_status[email] = AnymailRecipientStatus(message_id=message_id, status=status)
-        except (KeyError, TypeError):
+        except (KeyError, TypeError) as err:
             raise AnymailRequestsAPIError("Invalid Mailjet API response format",
                                           email_message=message, payload=payload, response=response,
-                                          backend=self)
+                                          backend=self) from err
         # Make sure we ended up with a status for every original recipient
         # (Mailjet only communicates "Sent")
         for recipients in payload.recipients.values():
@@ -150,9 +150,10 @@ class MailjetPayload(RequestsPayload):
                                               parsed.addr_spec)
                 else:
                     parsed = EmailAddress(headers["SenderName"], headers["SenderEmail"])
-            except KeyError:
+            except KeyError as err:
                 raise AnymailRequestsAPIError("Invalid Mailjet template API response",
-                                              email_message=self.message, response=response, backend=self.backend)
+                                              email_message=self.message, response=response,
+                                              backend=self.backend) from err
             self.set_from_email(parsed)
 
     def _format_email_for_mailjet(self, email):

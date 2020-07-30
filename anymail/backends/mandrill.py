@@ -40,10 +40,10 @@ class EmailBackend(AnymailRequestsBackend):
                     status = 'unknown'
                 message_id = item.get('_id', None)  # can be missing for invalid/rejected recipients
                 recipient_status[email] = AnymailRecipientStatus(message_id=message_id, status=status)
-        except (KeyError, TypeError):
+        except (KeyError, TypeError) as err:
             raise AnymailRequestsAPIError("Invalid Mandrill API response format",
                                           email_message=message, payload=payload, response=response,
-                                          backend=self)
+                                          backend=self) from err
         return recipient_status
 
 

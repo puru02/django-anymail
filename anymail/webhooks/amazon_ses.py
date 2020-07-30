@@ -91,11 +91,11 @@ class AmazonSESBaseWebhookView(AnymailBaseWebhookView):
             message_string = sns_message.get("Message")
             try:
                 ses_event = json.loads(message_string)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as err:
                 if message_string == "Successfully validated SNS topic for Amazon SES event publishing.":
                     pass  # this Notification is generated after SubscriptionConfirmation
                 else:
-                    raise AnymailAPIError("Unparsable SNS Message %r" % message_string)
+                    raise AnymailAPIError("Unparsable SNS Message %r" % message_string) from err
             else:
                 events = self.esp_to_anymail_events(ses_event, sns_message)
         elif sns_type == "SubscriptionConfirmation":
@@ -305,7 +305,7 @@ class AmazonSESInboundWebhookView(AmazonSESBaseWebhookView):
                 raise AnymailBotoClientAPIError(
                     "Anymail AmazonSESInboundWebhookView couldn't download S3 object '{bucket_name}:{object_key}'"
                     "".format(bucket_name=bucket_name, object_key=object_key),
-                    client_error=err)
+                    client_error=err) from err
             finally:
                 content.close()
         else:
@@ -344,6 +344,5 @@ class AnymailBotoClientAPIError(AnymailAPIError, ClientError):
         assert isinstance(client_error, ClientError)
         # init self as boto ClientError (which doesn't cooperatively subclass):
         super().__init__(error_response=client_error.response, operation_name=client_error.operation_name)
-        self.__cause__ = client_error
         # emulate AnymailError init:
         self.args = args

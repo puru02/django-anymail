@@ -11,8 +11,8 @@ try:
     import boto3
     from botocore.client import Config
     from botocore.exceptions import BotoCoreError, ClientError, ConnectionError
-except ImportError:
-    raise AnymailImproperlyInstalled(missing_package='boto3', backend='amazon_ses')
+except ImportError as err:
+    raise AnymailImproperlyInstalled(missing_package='boto3', backend='amazon_ses') from err
 
 
 # boto3 has several root exception classes; this is meant to cover all of them
@@ -130,7 +130,7 @@ class AmazonSESSendRawEmailPayload(AmazonSESBasePayload):
         except (KeyError, TypeError) as err:
             raise AnymailAPIError(
                 "%s parsing Amazon SES send result %r" % (str(err), response),
-                backend=self.backend, email_message=self.message, payload=self)
+                backend=self.backend, email_message=self.message, payload=self) from None
 
         recipient_status = AnymailRecipientStatus(message_id=message_id, status="queued")
         return {recipient.addr_spec: recipient_status for recipient in self.all_recipients}
@@ -276,7 +276,7 @@ class AmazonSESSendBulkTemplatedEmailPayload(AmazonSESBasePayload):
         except (KeyError, TypeError) as err:
             raise AnymailAPIError(
                 "%s parsing Amazon SES send result %r" % (str(err), response),
-                backend=self.backend, email_message=self.message, payload=self)
+                backend=self.backend, email_message=self.message, payload=self) from None
 
         to_addrs = [to.addr_spec for to in self.recipients["to"]]
         if len(anymail_statuses) != len(to_addrs):

@@ -53,10 +53,10 @@ class EmailBackend(AnymailRequestsBackend):
             parsed_response = self.deserialize_json_response(response, payload, message)
             try:
                 message_id = parsed_response['messageId']
-            except (KeyError, TypeError):
+            except (KeyError, TypeError) as err:
                 raise AnymailRequestsAPIError("Invalid SendinBlue API response format",
                                               email_message=message, payload=payload, response=response,
-                                              backend=self)
+                                              backend=self) from err
 
         status = AnymailRecipientStatus(message_id=message_id, status="queued")
         return {recipient.addr_spec: status for recipient in payload.all_recipients}

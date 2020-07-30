@@ -40,7 +40,8 @@ class SparkPostBaseWebhookView(AnymailBaseWebhookView):
                 # Empty event (SparkPost sometimes sends as a "ping")
                 event_class = event = None
             else:
-                raise TypeError("Invalid SparkPost webhook event has multiple event classes: %r" % raw_event)
+                raise TypeError(
+                    "Invalid SparkPost webhook event has multiple event classes: %r" % raw_event) from None
         return event_class, event, raw_event
 
     def esp_to_anymail_event(self, event_class, event, raw_event):

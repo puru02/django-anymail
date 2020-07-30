@@ -358,7 +358,7 @@ def get_anymail_setting(name, default=UNSET, esp_name=None, kwargs=None, allow_b
                 if allow_bare:
                     message += " or %s" % setting
                 message += " in your Django settings"
-                raise AnymailConfigurationError(message)
+                raise AnymailConfigurationError(message) from None
             else:
                 return default
 

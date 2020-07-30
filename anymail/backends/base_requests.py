@@ -98,10 +98,10 @@ class AnymailRequestsBackend(AnymailBaseBackend):
         """
         try:
             return response.json()
-        except ValueError:
+        except ValueError as err:
             raise AnymailRequestsAPIError("Invalid JSON in %s API response" % self.esp_name,
                                           email_message=message, payload=payload, response=response,
-                                          backend=self)
+                                          backend=self) from err
 
     @staticmethod
     def _dump_api_request(response, **kwargs):

@@ -41,7 +41,7 @@ class MandrillSignatureMixin(AnymailCoreWebhookView):
         try:
             signature = request.META["HTTP_X_MANDRILL_SIGNATURE"]
         except KeyError:
-            raise AnymailWebhookValidationFailure("X-Mandrill-Signature header missing from webhook POST")
+            raise AnymailWebhookValidationFailure("X-Mandrill-Signature header missing from webhook POST") from None
 
         # Mandrill signs the exact URL (including basic auth, if used) plus the sorted POST params:
         url = self.webhook_url or get_request_uri(request)

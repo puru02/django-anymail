@@ -51,19 +51,19 @@ class EmailBackend(AnymailRequestsBackend):
                 # these fields should always be present
                 error_code = one_response["ErrorCode"]
                 msg = one_response["Message"]
-            except (KeyError, TypeError):
+            except (KeyError, TypeError) as err:
                 raise AnymailRequestsAPIError("Invalid Postmark API response format",
                                               email_message=message, payload=payload, response=response,
-                                              backend=self)
+                                              backend=self) from err
 
             if error_code == 0:
                 # At least partial success, and (some) email was sent.
                 try:
                     message_id = one_response["MessageID"]
-                except KeyError:
+                except KeyError as err:
                     raise AnymailRequestsAPIError("Invalid Postmark API success response format",
                                                   email_message=message, payload=payload,
-                                                  response=response, backend=self)
+                                                  response=response, backend=self) from err
 
                 # Assume all To recipients are "sent" unless proven otherwise below.
                 # (Must use "To" from API response to get correct individual MessageIDs in batch send.)

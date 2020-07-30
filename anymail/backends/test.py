@@ -60,8 +60,8 @@ class EmailBackend(AnymailBaseBackend):
     def parse_recipient_status(self, response, payload, message):
         try:
             return response['recipient_status']
-        except KeyError:
-            raise AnymailAPIError('Unparsable test response')
+        except KeyError as err:
+            raise AnymailAPIError('Unparsable test response') from err
 
 
 class TestPayload(BasePayload):

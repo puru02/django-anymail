@@ -537,7 +537,7 @@ class BasePayload:
         except TypeError as err:
             # Add some context to the "not JSON serializable" message
             raise AnymailSerializationError(orig_err=err, email_message=self.message,
-                                            backend=self.backend, payload=self)
+                                            backend=self.backend, payload=self) from None
 
     @staticmethod
     def _json_default(o):

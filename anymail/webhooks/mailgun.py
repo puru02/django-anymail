@@ -54,8 +54,9 @@ class MailgunBaseWebhookView(AnymailBaseWebhookView):
                 token = request.POST['token']
                 timestamp = request.POST['timestamp']
                 signature = request.POST['signature']
-            except KeyError:
-                raise AnymailWebhookValidationFailure("Mailgun webhook called without required security fields")
+            except KeyError as err:
+                raise AnymailWebhookValidationFailure(
+                    "Mailgun webhook called without required security fields") from err
 
         expected_signature = hmac.new(key=self.webhook_signing_key, msg='{}{}'.format(timestamp, token).encode('ascii'),
                                       digestmod=hashlib.sha256).hexdigest()

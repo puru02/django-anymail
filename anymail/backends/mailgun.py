@@ -61,10 +61,10 @@ class EmailBackend(AnymailRequestsBackend):
         try:
             message_id = parsed_response["id"]
             mailgun_message = parsed_response["message"]
-        except (KeyError, TypeError):
+        except (KeyError, TypeError) as err:
             raise AnymailRequestsAPIError("Invalid Mailgun API response format",
                                           email_message=message, payload=payload, response=response,
-                                          backend=self)
+                                          backend=self) from err
         if not mailgun_message.startswith("Queued"):
             raise AnymailRequestsAPIError("Unrecognized Mailgun API message '%s'" % mailgun_message,
                                           email_message=message, payload=payload, response=response,
