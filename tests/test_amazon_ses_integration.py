@@ -61,8 +61,8 @@ class AmazonSESBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
         self.message.attach_alternative('<p>HTML content</p>', "text/html")
 
         # boto3 relies on GC to close connections. Python 3 warns about unclosed ssl.SSLSocket during cleanup.
-        # We don't care. (It might not be a real problem worth warning, but in any case it's not our problem.)
-        # https://www.google.com/search?q=unittest+boto3+ResourceWarning+unclosed+ssl.SSLSocket
+        # We don't care. (It may be a false positive, or it may be a botocore problem, but it's not *our* problem.)
+        # https://github.com/boto/boto3/issues/454#issuecomment-586033745
         # Filter in TestCase.setUp because unittest resets the warning filters for each test.
         # https://stackoverflow.com/a/26620811/647002
         warnings.filterwarnings("ignore", message=r"unclosed <ssl\.SSLSocket", category=ResourceWarning)

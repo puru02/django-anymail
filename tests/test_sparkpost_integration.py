@@ -1,9 +1,12 @@
 import os
 import unittest
+import warnings
 from datetime import datetime, timedelta
 
 from django.test import SimpleTestCase, override_settings, tag
 
+from anymail.backends.base_requests import AnymailRequestsBackend
+from anymail.backends.sparkpost import EmailBackend as SparkPostBackend
 from anymail.exceptions import AnymailAPIError
 from anymail.message import AnymailMessage
 
@@ -28,11 +31,10 @@ class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
     SparkPost doesn't offer a test mode -- it tries to send everything
     you ask. To avoid stacking up a pile of undeliverable @example.com
     emails, the tests use SparkPost's "sink domain" @*.sink.sparkpostmail.com.
-    https://support.sparkpost.com/customer/en/portal/articles/2361300-how-to-test-integrations
+    https://www.sparkpost.com/docs/faq/using-sink-server/
 
     SparkPost also doesn't support arbitrary senders (so no from@example.com).
     We've set up @test-sp.anymail.info as a validated sending domain for these tests.
-
     """
 
     def setUp(self):
@@ -40,6 +42,17 @@ class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
         self.message = AnymailMessage('Anymail SparkPost integration test', 'Text content',
                                       'test@test-sp.anymail.info', ['to@test.sink.sparkpostmail.com'])
         self.message.attach_alternative('<p>HTML content</p>', "text/html")
+
+        # The SparkPost Python package uses requests directly, without managing sessions, and relies
+        # on GC to close connections. This leads to harmless (but valid) warnings about unclosed
+        # ssl.SSLSocket during cleanup: https://github.com/psf/requests/issues/1882
+        # There's not much we can do about that, short of switching from the SparkPost package
+        # to our own requests backend implementation (which *does* manage sessions properly).
+        # Unless/until we do that, filter the warnings to avoid test noise.
+        # Filter in TestCase.setUp because unittest resets the warning filters for each test.
+        # https://stackoverflow.com/a/26620811/647002
+        assert not issubclass(SparkPostBackend, AnymailRequestsBackend)  # else this filter can be removed
+        warnings.filterwarnings("ignore", message=r"unclosed <ssl\.SSLSocket", category=ResourceWarning)
 
     def test_simple_send(self):
         # Example of getting the SparkPost send status and transmission id from the message
