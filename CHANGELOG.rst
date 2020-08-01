@@ -42,6 +42,12 @@ Breaking changes
   code borrowed from Anymail's undocumented internals. (You should be able to switch
   to the Python standard library equivalents, as Anymail has done.)
 
+* AnymailMessageMixin now correctly subclasses Django's EmailMessage. If you use it
+  as part of your own custom EmailMessage-derived class, and you start getting errors
+  about "consistent method resolution order," you probably need to change your class's
+  inheritance. (For some helpful background, see this comment about
+  `mixin superclass ordering <https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html#comment_13805>`__.)
+
 
 v7.2 LTS
 --------
