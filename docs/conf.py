@@ -268,14 +268,9 @@ extlinks = {
 # -- Options for Intersphinx ------------------------------------------------
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.6', None),
+    'python': ('https://docs.python.org/3.7', None),
     'django': ('https://docs.djangoproject.com/en/stable/', 'https://docs.djangoproject.com/en/stable/_objects/'),
-    # Requests docs may be moving (Sep 2019):
-    #   see https://github.com/psf/requests/issues/5212
-    #   and https://github.com/psf/requests/issues/5214
-    'requests': ('https://docs.python-requests.org/en/latest/',
-                 ('https://docs.python-requests.org/en/latest/objects.inv',
-                  'https://requests.kennethreitz.org/en/latest/objects.inv')),
+    'requests': ('https://requests.readthedocs.io/en/stable/', None),
 }
 
 
