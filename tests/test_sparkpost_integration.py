@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 
 from django.test import SimpleTestCase, override_settings, tag
 
-from anymail.backends.base_requests import AnymailRequestsBackend
-from anymail.backends.sparkpost import EmailBackend as SparkPostBackend
 from anymail.exceptions import AnymailAPIError
 from anymail.message import AnymailMessage
 
@@ -51,6 +49,8 @@ class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
         # Unless/until we do that, filter the warnings to avoid test noise.
         # Filter in TestCase.setUp because unittest resets the warning filters for each test.
         # https://stackoverflow.com/a/26620811/647002
+        from anymail.backends.base_requests import AnymailRequestsBackend
+        from anymail.backends.sparkpost import EmailBackend as SparkPostBackend
         assert not issubclass(SparkPostBackend, AnymailRequestsBackend)  # else this filter can be removed
         warnings.filterwarnings("ignore", message=r"unclosed <ssl\.SSLSocket", category=ResourceWarning)
 
