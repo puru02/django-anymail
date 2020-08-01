@@ -35,7 +35,7 @@ Breaking changes
 
 * Drop support for Django versions older than Django 2.0, and for Python 2.7.
   (For compatibility with Django 1.11, stay on the Anymail `v7.2 LTS`_
-  extended support branch.)
+  extended support branch by setting your requirements to `django-anymail~=7.2`.)
 
 * Remove Anymail internal code related to supporting Python 2 and older Django
   versions. This does not change the documented API, but may affect you if your

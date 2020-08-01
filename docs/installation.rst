@@ -142,15 +142,15 @@ If you want to use Anymail's inbound or tracking webhooks:
 
    .. code-block:: python
 
-      from django.conf.urls import include, url
+      from django.urls import include, re_path
 
       urlpatterns = [
           ...
-          url(r'^anymail/', include('anymail.urls')),
+          re_path(r'^anymail/', include('anymail.urls')),
       ]
 
    (You can change the "anymail" prefix in the first parameter to
-   :func:`~django.conf.urls.url` if you'd like the webhooks to be served
+   :func:`~django.urls.re_path` if you'd like the webhooks to be served
    at some other URL. Just match whatever you use in the webhook URL you give
    your ESP in the next step.)
 
@@ -186,7 +186,7 @@ See :ref:`event-tracking` for information on creating signal handlers and the
 status tracking events you can receive. See :ref:`inbound` for information on
 receiving inbound message events.
 
-.. _mod_wsgi: http://modwsgi.readthedocs.io/en/latest/configuration-directives/WSGIPassAuthorization.html
+.. _mod_wsgi: https://modwsgi.readthedocs.io/en/latest/configuration-directives/WSGIPassAuthorization.html
 
 
 .. setting:: ANYMAIL
@@ -227,10 +227,11 @@ if you are using other Django apps that work with the same ESP.)
 Finally, for complex use cases, you can override most settings on a per-instance
 basis by providing keyword args where the instance is initialized (e.g., in a
 :func:`~django.core.mail.get_connection` call to create an email backend instance,
-or in `View.as_view()` call to set up webhooks in a custom urls.py). To get the kwargs
+or in a `View.as_view()` call to set up webhooks in a custom urls.py). To get the kwargs
 parameter for a setting, drop "ANYMAIL" and the ESP name, and lowercase the rest:
-e.g., you can override ANYMAIL_MAILGUN_API_KEY by passing `api_key="abc"` to
-:func:`~django.core.mail.get_connection`. See :ref:`multiple-backends` for an example.
+e.g., you can override ANYMAIL_MAILGUN_API_KEY for a particular connection by calling
+``get_connection("anymail.backends.mailgun.EmailBackend", api_key="abc")``.
+See :ref:`multiple-backends` for an example.
 
 There are specific Anymail settings for each ESP (like API keys and urls).
 See the :ref:`supported ESPs <supported-esps>` section for details.
@@ -253,7 +254,7 @@ See :ref:`recipients-refused`.
       }
 
 
-.. rubric:: SEND_DEFAULTS and *ESP*\ _SEND_DEFAULTS`
+.. rubric:: SEND_DEFAULTS and *ESP*\ _SEND_DEFAULTS
 
 A `dict` of default options to apply to all messages sent through Anymail.
 See :ref:`send-defaults`.

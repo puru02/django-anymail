@@ -26,17 +26,17 @@ The first approach is usually the simplest. The other two can be
 helpful if you are working with Python development tools that
 offer type checking or other static code analysis.
 
-Availability of these features varies by ESP, and there may be additional
-limitations even when an ESP does support a particular feature. Be sure
-to check Anymail's docs for your :ref:`specific ESP <supported-esps>`.
-If you try to use a feature your ESP does not offer, Anymail will raise
-an :ref:`unsupported feature <unsupported-features>` error.
-
 
 .. _anymail-send-options:
 
 ESP send options (AnymailMessage)
 ---------------------------------
+
+Availability of each of these features varies by ESP, and there may be additional
+limitations even when an ESP does support a particular feature. Be sure
+to check Anymail's docs for your :ref:`specific ESP <supported-esps>`.
+If you try to use a feature your ESP does not offer, Anymail will raise
+an :ref:`unsupported feature <unsupported-features>` error.
 
 .. class:: AnymailMessage
 
@@ -167,7 +167,7 @@ ESP send options (AnymailMessage)
 
         ESPs have differing restrictions on tags. For portability,
         it's best to stick with strings that start with an alphanumeric
-        character. (Also, Postmark only allows a single tag per message.)
+        character. (Also, a few ESPs allow only a single tag per message.)
 
 
     .. caution::
@@ -359,7 +359,7 @@ ESP send status
           * `'queued'` the ESP has accepted the message
             and will try to send it asynchronously
           * `'invalid'` the ESP considers the sender or recipient email invalid
-          * `'rejected'` the recipient is on an ESP blacklist
+          * `'rejected'` the recipient is on an ESP suppression list
             (unsubscribe, previous bounces, etc.)
           * `'failed'` the attempt to send failed for some other reason
           * `'unknown'` anything else
@@ -402,7 +402,8 @@ ESP send status
 
         .. code-block:: python
 
-            # This will work with a requests-based backend:
+            # This will work with a requests-based backend,
+            # for an ESP whose send API provides a JSON response:
             message.anymail_status.esp_response.json()
 
 

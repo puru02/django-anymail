@@ -29,9 +29,10 @@ often help you pinpoint the problem...
 **Double-check common issues**
 
   * Did you add any required settings for your ESP to the `ANYMAIL` dict in your
-    settings.py? (E.g., ``"SENDGRID_API_KEY"`` for SendGrid.) See :ref:`supported-esps`.
+    settings.py? (E.g., ``"SENDGRID_API_KEY"`` for SendGrid.) Check the instructions
+    for the ESP you're using under :ref:`supported-esps`.
   * Did you add ``'anymail'`` to the list of :setting:`INSTALLED_APPS` in settings.py?
-  * Are you using a valid from address? Django's default is "webmaster@localhost",
+  * Are you using a valid *from* address? Django's default is "webmaster@localhost",
     which most ESPs reject. Either specify the ``from_email`` explicitly on every message
     you send, or add :setting:`DEFAULT_FROM_EMAIL` to your settings.py.
 
@@ -61,8 +62,8 @@ Support
 
 If you've gone through the troubleshooting above and still aren't sure what's wrong,
 the Anymail community is happy to help. Anymail is supported and maintained by the
-people who use it---like you! (The vast majority of Anymail contributors volunteer
-their time, and are not employees of any ESP.)
+people who use it---like you! (Anymail contributors volunteer their time, and are
+not employees of any ESP.)
 
 Here's how to contact the Anymail community:
 

@@ -3,7 +3,7 @@
 Mandrill
 ========
 
-Anymail integrates with the `Mandrill <http://mandrill.com/>`__
+Anymail integrates with the `Mandrill <https://mandrill.com/>`__
 transactional email service from MailChimp.
 
 .. note:: **Limited Support for Mandrill**

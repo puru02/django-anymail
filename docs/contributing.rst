@@ -180,7 +180,7 @@ Anymail's Sphinx conf sets up a few enhancements you can use in the docs:
 
 .. _Django's added markup:
     https://docs.djangoproject.com/en/stable/internals/contributing/writing-documentation/#django-specific-markup
-.. _extlinks: http://www.sphinx-doc.org/en/stable/ext/extlinks.html
-.. _intersphinx: http://www.sphinx-doc.org/en/master/ext/intersphinx.html
+.. _extlinks: https://www.sphinx-doc.org/en/stable/usage/extensions/extlinks.html
+.. _intersphinx: https://www.sphinx-doc.org/en/stable/usage/extensions/intersphinx.html
 .. _Writing Documentation:
     https://docs.djangoproject.com/en/stable/internals/contributing/writing-documentation/

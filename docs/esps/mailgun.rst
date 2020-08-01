@@ -425,9 +425,9 @@ The event's :attr:`~anymail.signals.AnymailTrackingEvent.esp_event` field will b
 the parsed `Mailgun webhook payload`_ as a Python `dict` with ``"signature"`` and
 ``"event-data"`` keys.
 
-Anymail uses Mailgun's webhook `token` as its normalized
+Anymail uses Mailgun's webhook ``token`` as its normalized
 :attr:`~anymail.signals.AnymailTrackingEvent.event_id`, rather than Mailgun's
-event-data `id` (which is only guaranteed to be unique during a single day).
+event-data ``id`` (which is only guaranteed to be unique during a single day).
 If you need the event-data id, it can be accessed in your webhook handler as
 ``event.esp_event["event-data"]["id"]``. (This can be helpful for working with
 Mailgun's other event APIs.)

@@ -14,7 +14,7 @@ Webhook support is optional. If you haven't yet, you'll need to
 project. (You may also want to review :ref:`securing-webhooks`.)
 
 Once you've enabled webhooks, Anymail will send an ``anymail.signals.tracking``
-custom Django :mod:`signal <django.dispatch>` for each ESP tracking event it receives.
+custom Django :doc:`signal <django:topics/signals>` for each ESP tracking event it receives.
 You can connect your own receiver function to this signal for further processing.
 
 Be sure to read Django's `listening to signals`_ docs for information on defining
@@ -40,7 +40,7 @@ Example:
                   event.recipient, event.click_url))
 
 You can define individual signal receivers, or create one big one for all
-event types, which ever you prefer. You can even handle the same event
+event types, whichever you prefer. You can even handle the same event
 in multiple receivers, if that makes your code cleaner. These
 :ref:`signal receiver functions <signal-receivers>` are documented
 in more detail below.
@@ -189,8 +189,8 @@ Normalized tracking event
     .. attribute:: mta_response
 
         If available, a `str` with a raw (intended for email administrators) response
-        from the receiving MTA. Otherwise `None`. Often includes SMTP response codes,
-        but the exact format varies by ESP (and sometimes receiving MTA).
+        from the receiving mail transfer agent. Otherwise `None`. Often includes SMTP
+        response codes, but the exact format varies by ESP (and sometimes receiving MTA).
 
     .. attribute:: user_agent
 
@@ -203,7 +203,7 @@ Normalized tracking event
 
     .. attribute:: esp_event
 
-        The "raw" event data from the ESP, deserialized into a python data structure.
+        The "raw" event data from the ESP, deserialized into a Python data structure.
         For most ESPs this is either parsed JSON (as a `dict`), or HTTP POST fields
         (as a Django :class:`~django.http.QueryDict`).
 
@@ -230,7 +230,7 @@ Your Anymail signal receiver must be a function with this signature:
    :param AnymailTrackingEvent event: The normalized tracking event.
                                       Almost anything you'd be interested in
                                       will be in here.
-   :param str esp_name: e.g., "SendMail" or "Postmark". If you are working
+   :param str esp_name: e.g., "SendGrid" or "Postmark". If you are working
                         with multiple ESPs, you can use this to distinguish
                         ESP-specific handling in your shared event processing.
    :param \**kwargs: Required by Django's signal mechanism
@@ -259,7 +259,7 @@ And will retry sending the "failed" events, which could cause duplicate
 processing in your code.
 If your signal receiver code might be slow, you should instead
 queue the event for later, asynchronous processing (e.g., using
-something like `Celery`_).
+something like :pypi:`celery`).
 
 If your signal receiver function is defined within some other
 function or instance method, you *must* use the `weak=False`
@@ -268,7 +268,6 @@ but will unpredictably stop being called at some point---typically
 on your production server, in a hard-to-debug way. See Django's
 `listening to signals`_ docs for more information.
 
-.. _Celery: http://www.celeryproject.org/
 .. _listening to signals:
     https://docs.djangoproject.com/en/stable/topics/signals/#listening-to-signals
 

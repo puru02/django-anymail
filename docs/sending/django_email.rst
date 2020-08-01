@@ -10,7 +10,7 @@ email using Django's default SMTP :class:`~django.core.mail.backends.smtp.EmailB
 switching to Anymail will be easy. Anymail is designed to "just work" with Django.
 
 If you're not familiar with Django's email functions, please take a look at
-":mod:`sending email <django.core.mail>`" in the Django docs first.
+:doc:`django:topics/email` in the Django docs first.
 
 Anymail supports most of the functionality of Django's :class:`~django.core.mail.EmailMessage`
 and :class:`~django.core.mail.EmailMultiAlternatives` classes.
@@ -39,8 +39,8 @@ function with the ``html_message`` parameter:
         send_mail("Subject", "text body", "from@example.com",
                   ["to@example.com"], html_message="<html>html body</html>")
 
-However, many Django email capabilities -- and additional Anymail features --
-are only available when working with an :class:`~django.core.mail.EmailMultiAlternatives`
+However, many Django email capabilities---and additional Anymail features---are only
+available when working with an :class:`~django.core.mail.EmailMultiAlternatives`
 object. Use its :meth:`~django.core.mail.EmailMultiAlternatives.attach_alternative`
 method to send HTML:
 
@@ -168,7 +168,8 @@ raise :exc:`~exceptions.AnymailUnsupportedFeature`.
 .. setting:: ANYMAIL_IGNORE_UNSUPPORTED_FEATURES
 
 If you'd like to silently ignore :exc:`~exceptions.AnymailUnsupportedFeature`
-errors and send the messages anyway, set :setting:`!ANYMAIL_IGNORE_UNSUPPORTED_FEATURES`
+errors and send the messages anyway, set
+:setting:`"IGNORE_UNSUPPORTED_FEATURES" <ANYMAIL_IGNORE_UNSUPPORTED_FEATURES>`
 to `True` in your settings.py:
 
   .. code-block:: python
@@ -197,15 +198,16 @@ If a single message is sent to multiple recipients, and *any* recipient is valid
 You can still examine the message's :attr:`~message.AnymailMessage.anymail_status`
 property after the send to determine the status of each recipient.
 
-You can disable this exception by setting :setting:`ANYMAIL_IGNORE_RECIPIENT_STATUS`
-to `True` in your settings.py, which will cause Anymail to treat any non-API-error response
-from your ESP as a successful send.
+You can disable this exception by setting
+:setting:`"IGNORE_RECIPIENT_STATUS" <ANYMAIL_IGNORE_RECIPIENT_STATUS>` to `True` in
+your settings.py `ANYMAIL` dict, which will cause Anymail to treat *any*
+response from your ESP (other than an API error) as a successful send.
 
 .. note::
 
-    Many ESPs don't check recipient status during the send API call. For example,
+    Most ESPs don't check recipient status during the send API call. For example,
     Mailgun always queues sent messages, so you'll never catch
     :exc:`AnymailRecipientsRefused` with the Mailgun backend.
 
-    For those ESPs, use Anymail's :ref:`delivery event tracking <event-tracking>`
-    if you need to be notified of sends to blacklisted or invalid emails.
+    You can use Anymail's :ref:`delivery event tracking <event-tracking>`
+    if you need to be notified of sends to suppression-listed or invalid emails.

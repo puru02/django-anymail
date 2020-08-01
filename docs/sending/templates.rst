@@ -211,7 +211,7 @@ for use as merge data:
     # Do something this instead:
     message.merge_global_data = {
         'PRODUCT': product.name,  # assuming name is a CharField
-        'TOTAL_COST': "%.2f" % total_cost,
+        'TOTAL_COST': "{cost:0.2f}".format(cost=total_cost),
         'SHIP_DATE': ship_date.strftime('%B %d, %Y')  # US-style "March 15, 2015"
     }
 

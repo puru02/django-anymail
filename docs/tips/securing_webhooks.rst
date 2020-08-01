@@ -73,10 +73,10 @@ Basic usage is covered in the
 :ref:`webhooks configuration <webhooks-configuration>` docs.
 
 If something posts to your webhooks without the required shared
-secret as basic auth in the HTTP_AUTHORIZATION header, Anymail will
+secret as basic auth in the HTTP *Authorization* header, Anymail will
 raise an :exc:`AnymailWebhookValidationFailure` error, which is
 a subclass of Django's :exc:`~django.core.exceptions.SuspiciousOperation`.
-This will result in an HTTP 400 response, without further processing
+This will result in an HTTP 400 "bad request" response, without further processing
 the data or calling your signal receiver function.
 
 In addition to a single "random:random" string, you can give a list

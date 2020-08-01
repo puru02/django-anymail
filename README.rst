@@ -40,9 +40,14 @@ built-in `django.core.mail` package. It includes:
 * Inbound message support, to receive email through your ESP's webhooks,
   with simplified, portable access to attachments and other inbound content
 
-Anymail is released under the BSD license. It is extensively tested against
-Django 2.0--3.1 on all Python versions supported by Django.
-Anymail releases follow `semantic versioning <http://semver.org/>`_.
+Anymail maintains compatibility with all Django versions that are in mainstream
+or extended support, plus (usually) a few older Django versions, and is extensively
+tested on all Python versions supported by Django. (Even-older Django versions
+may still be covered by an Anymail extended support release; consult the
+`changelog <https://anymail.readthedocs.io/en/stable/changelog/>`_ for details.)
+
+Anymail releases follow `semantic versioning <https://semver.org/>`_.
+The package is released under the BSD license.
 
 .. END shared-intro
 
@@ -124,7 +129,7 @@ or SparkPost or any other supported ESP where you see "mailgun":
 
         msg = EmailMultiAlternatives(
             subject="Please activate your account",
-            body="Click to activate your account: http://example.com/activate",
+            body="Click to activate your account: https://example.com/activate",
             from_email="Example <admin@example.com>",
             to=["New User <user1@example.com>", "account.manager@example.com"],
             reply_to=["Helpdesk <support@example.com>"])
@@ -132,7 +137,7 @@ or SparkPost or any other supported ESP where you see "mailgun":
         # Include an inline image in the html:
         logo_cid = attach_inline_image_file(msg, "/path/to/logo.jpg")
         html = """<img alt="Logo" src="cid:{logo_cid}">
-                  <p>Please <a href="http://example.com/activate">activate</a>
+                  <p>Please <a href="https://example.com/activate">activate</a>
                   your account</p>""".format(logo_cid=logo_cid)
         msg.attach_alternative(html, "text/html")
 
