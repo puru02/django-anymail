@@ -1,4 +1,4 @@
-from django.conf.urls import re_path
+from django.urls import re_path
 
 from .webhooks.amazon_ses import AmazonSESInboundWebhookView, AmazonSESTrackingWebhookView
 from .webhooks.mailgun import MailgunInboundWebhookView, MailgunTrackingWebhookView
