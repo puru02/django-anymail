@@ -5,8 +5,6 @@ Mailjet
 
 Anymail integrates with the `Mailjet`_ email service, using their transactional `Send API`_ (v3).
 
-.. versionadded:: 0.11
-
 .. _mailjet-v31-api:
 
 .. note::

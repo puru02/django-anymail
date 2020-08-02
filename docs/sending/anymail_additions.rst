@@ -76,8 +76,6 @@ an :ref:`unsupported feature <unsupported-features>` error.
 
     .. attribute:: envelope_sender
 
-        .. versionadded:: 2.0
-
         Set this to a `str` email address that should be used as the message's
         envelope sender. If supported by your ESP, this will become the Return-Path
         in the recipient's mailbox.

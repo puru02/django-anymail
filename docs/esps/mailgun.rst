@@ -137,13 +137,6 @@ use Anymail's :attr:`~anymail.message.AnymailMessage.envelope_sender`
         message.envelope_sender = "anything@mail2.example.com"  # the "anything@" is ignored
 
 
-.. versionchanged:: 2.0
-
-    Earlier Anymail versions looked for a special `sender_domain` key in the message's
-    :attr:`~anymail.message.AnymailMessage.esp_extra` to override Mailgun's sender domain.
-    This is still supported, but may be deprecated in a future release. Using
-    :attr:`~anymail.message.AnymailMessage.envelope_sender` as shown above is now preferred.
-
 .. _Mailgun sender domain:
     https://help.mailgun.com/hc/en-us/articles/202256730-How-do-I-pick-a-domain-name-for-my-Mailgun-account-
 

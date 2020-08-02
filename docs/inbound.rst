@@ -3,8 +3,6 @@
 Receiving mail
 ==============
 
-.. versionadded:: 1.3
-
 For ESPs that support receiving inbound email, Anymail offers normalized handling
 of inbound events.
 
@@ -366,11 +364,6 @@ have these methods:
 
         The errors param is as in :meth:`~bytes.decode`. The default "replace" substitutes the
         Unicode "replacement character" for any illegal characters in the text.
-
-        .. versionchanged:: 2.1
-
-            Changed to use attachment's declared charset by default,
-            and added errors option defaulting to replace.
 
     .. method:: get_content_bytes()
 

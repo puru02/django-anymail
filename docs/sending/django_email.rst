@@ -145,10 +145,6 @@ has special handling for certain headers. Anymail replicates its behavior for co
   :class:`to <django.core.mail.EmailMessage>` list. Spoofing the :mailheader:`To` header like this
   is popular with spammers, and almost none of Anymail's supported ESPs allow it.
 
-.. versionchanged:: 2.0
-
-    Improved header-handling compatibility with Django's SMTP EmailBackend.
-
 
 .. _unsupported-features:
 

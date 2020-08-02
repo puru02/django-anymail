@@ -282,19 +282,10 @@ This is actually implemented using HTTP basic authentication, and the string is
 technically a "username:password" format. But you should *not* use any real
 username or password for this shared secret.
 
-.. versionchanged:: 1.4
-
-    The earlier WEBHOOK_AUTHORIZATION setting was renamed WEBHOOK_SECRET, so that
-    Django error reporting sanitizes it. Support for the old name was dropped in
-    Anymail 2.0, and if you have not yet updated your settings.py, all webhook calls
-    will fail with a "missing or invalid basic auth" error.
-
 
 .. setting:: ANYMAIL_REQUESTS_TIMEOUT
 
 .. rubric:: REQUESTS_TIMEOUT
-
-.. versionadded:: 1.3
 
 For Requests-based Anymail backends, the timeout value used for all API calls to your ESP.
 The default is 30 seconds. You can set to a single float, a 2-tuple of floats for

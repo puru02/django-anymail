@@ -43,8 +43,6 @@ Exceptions
 
 .. exception:: AnymailInvalidAddress
 
-    .. versionadded:: 0.7
-
     The send call will raise a :exc:`!AnymailInvalidAddress` error if you
     attempt to send a message with invalidly-formatted email addresses in
     the :attr:`from_email` or recipient lists.

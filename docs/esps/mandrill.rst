@@ -257,14 +257,6 @@ for each event in the batch.)
     https://mandrill.zendesk.com/hc/en-us/articles/205583197-Inbound-Email-Processing-Overview
 
 
-.. versionchanged:: 1.3
-    Earlier Anymail releases used :samp:`.../anymail/mandrill/{tracking}/` as the tracking
-    webhook url. With the addition of inbound handling, Anymail has dropped "tracking"
-    from the recommended url for new installations. But the older url is still
-    supported. Existing installations can continue to use it---and can even install it
-    on a Mandrill *inbound* route to avoid issuing a new webhook key.
-
-
 .. _migrating-from-djrill:
 
 Migrating from Djrill
@@ -379,8 +371,6 @@ Changes to EmailMessage attributes
   With Anymail, set :attr:`~anymail.message.AnymailMessage.envelope_sender`
   instead. You'll need to pass a valid email address (not just a domain),
   but Anymail will use only the domain, and will ignore anything before the @.
-
-  .. versionchanged:: 2.0
 
 **Other Mandrill-specific attributes**
   Djrill allowed nearly all Mandrill API parameters to be set
