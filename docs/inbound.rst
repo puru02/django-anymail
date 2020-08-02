@@ -168,7 +168,7 @@ Normalized inbound message
         :class:`~anymail.utils.EmailAddress` object, which makes it easier to access
         the parsed address fields:
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> str(message.from_email)  # the fully-formatted address
             '"Dr. Justin Customer, CPA" <jcustomer@example.com>'
