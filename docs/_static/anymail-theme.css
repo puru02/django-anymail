@@ -1,31 +1,9 @@
 /* Anymail modifications to sphinx-rtd-theme styles */
 
-/* List item spacing: https://github.com/rtfd/sphinx_rtd_theme/issues/590 */
-/*        Regression: https://github.com/rtfd/sphinx_rtd_theme/issues/705 */
-.rst-content .section ol li p:last-child,
-.rst-content .section ul li p:last-child {
-  margin-bottom: 24px;
-}
-
-
-/* Pygments shell/console prompt: */
-.highlight .gp {
-  /* The RTD theme shows prompts the same color as other code.
-     We want to distinguish them (like most Pygments themes do). */
-  color: #d14;
-
-  /* Exclude prompt characters when copying from highlighted code. */
-  user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-}
-
 
 /* Sticky table first column (used for ESP feature matrix) */
 table.sticky-left td:first-of-type,
 table.sticky-left th:first-of-type {
-  position: -webkit-sticky; /* Safari */
   position: sticky;
   left: 0;
   background-color: #fcfcfc; /* override transparent from .wy-table td */
@@ -36,7 +14,6 @@ table.sticky-left th:first-of-type[colspan] > p {
      since those always wrap a rubric <p> (in the specific table that uses this),
      just make the <p> sticky within the <td>. */
   display: inline-block;
-  position: -webkit-sticky; /* Safari */
   position: sticky;
   left: 17px; /* (.wy-table $table-padding-size) + (docutils border="1" in html) */
 }
@@ -57,12 +34,12 @@ table.sticky-left th:first-of-type[colspan] > p {
             https://github.com/rtfd/sphinx_rtd_theme/issues/92
 */
 .rst-content a code.xref {
-  color: #2980B9;
-  font-weight: inherit;
+  color: inherit;
+  /*font-weight: inherit;*/
 }
 .rst-content a:hover code.xref {
-  color: #3091d1;
+  color: inherit;
 }
 .rst-content a:visited code.xref {
-  color: #9B59B6;
+  color: inherit;
 }
