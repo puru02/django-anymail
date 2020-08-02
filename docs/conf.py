@@ -11,20 +11,25 @@
 
 import os
 import sys
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+from pathlib import Path
+
+ON_READTHEDOCS = os.environ.get('READTHEDOCS', None) == 'True'
+DOCS_PATH = Path(__file__).parent
+PROJECT_ROOT_PATH = DOCS_PATH.parent
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, PROJECT_ROOT_PATH.resolve())
 
 # define __version__ and __minor_version__ from ../anymail/_version.py,
 # but without importing from anymail (which would make docs dependent on Django, etc.)
 __version__ = "UNSET"
 __minor_version__ = "UNSET"
-with open("../anymail/_version.py") as f:
-    code = compile(f.read(), "../anymail/_version.py", 'exec')
-    exec(code)
+version_path = PROJECT_ROOT_PATH / "anymail/_version.py"
+code = compile(version_path.read_text(), version_path, 'exec')
+exec(code)
+
 
 # -- General configuration -----------------------------------------------------
 
@@ -100,11 +105,11 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-if not on_rtd:  # only import and set the theme if we're building docs locally
+if not ON_READTHEDOCS:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme  # this seems to come with sphinx; if not, pip install it
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-# if on_rtd, readthedocs.org uses their theme by default (and specifying it here breaks them)
+# else readthedocs.org uses their theme by default (and specifying it here breaks them)
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -275,10 +280,13 @@ intersphinx_mapping = {
 
 
 def setup(app):
-    app.add_stylesheet("anymail-theme.css")
-    app.add_javascript("anymail-config.js")
-    app.add_javascript("version-alert.js")
-    app.add_javascript("https://unpkg.com/rate-the-docs")
+    app.add_css_file("anymail-theme.css")
+    # Inline <script> for anymail-config.js to avoid non-async JS load:
+    # app.add_js_file("anymail-config.js")
+    anymail_config_js = (DOCS_PATH / "_static/anymail-config.js").read_text()
+    app.add_js_file(None, body=anymail_config_js)
+    app.add_js_file("version-alert.js", **{"async": "async"})
+    app.add_js_file("https://unpkg.com/rate-the-docs", **{"async": "async"})
 
     # Django-specific roles, from https://github.com/django/django/blob/master/docs/_ext/djangodocs.py:
     app.add_crossref_type(

@@ -27,4 +27,8 @@ function warnOnLatestVersion() {
   parent.insertBefore(warning, parent.firstChild);
 }
 
-document.addEventListener('DOMContentLoaded', warnOnLatestVersion);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', warnOnLatestVersion);
+} else {
+  warnOnLatestVersion();
+}

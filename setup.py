@@ -82,6 +82,7 @@ setup(
         "Environment :: Web Environment",
     ],
     long_description=long_description,
+    long_description_content_type="text/x-rst",
     project_urls=OrderedDict([
         ("Documentation", "https://anymail.readthedocs.io/en/%s/" % release_tag),
         ("Source", "https://github.com/anymail/django-anymail"),
