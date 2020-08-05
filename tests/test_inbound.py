@@ -137,6 +137,15 @@ class AnymailInboundMessageConstructionTests(SimpleTestCase):
         att = AnymailInboundMessage.construct_attachment(content_type="image/png", content=content, base64=True)
         self.assertEqual(att.get_content_bytes(), SAMPLE_IMAGE_CONTENT)
 
+    def test_construct_attachment_unicode_filename(self):
+        # Issue #197
+        att = AnymailInboundMessage.construct_attachment(
+            content_type="text/plain", content="Unicode ✓", charset='utf-8', base64=False,
+            filename="Simulácia.txt", content_id="inline-id",)
+        self.assertEqual(att.get_filename(), "Simulácia.txt")
+        self.assertTrue(att.is_inline_attachment())
+        self.assertEqual(att.get_content_text(), "Unicode ✓")
+
     def test_parse_raw_mime(self):
         # (we're not trying to exhaustively test email.parser MIME handling here;
         # just that AnymailInboundMessage.parse_raw_mime calls it correctly)

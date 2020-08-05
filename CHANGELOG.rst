@@ -25,6 +25,18 @@ Release history
 ^^^^^^^^^^^^^^^
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
+v7.2.1
+------
+
+*2020-08-05*
+
+Fixes
+~~~~~
+
+* **Inbound:** Fix a Python 2.7-only UnicodeEncodeError when attachments have non-ASCII
+  filenames. (Thanks to `@kika115`_ for reporting it.)
+
+
 v7.2 LTS
 --------
 
@@ -1099,6 +1111,7 @@ Features
 .. _@janneThoft: https://github.com/janneThoft
 .. _@jc-ee: https://github.com/jc-ee
 .. _@joshkersey: https://github.com/joshkersey
+.. _@kika115: https://github.com/kika115
 .. _@Lekensteyn: https://github.com/Lekensteyn
 .. _@lewistaylor: https://github.com/lewistaylor
 .. _@mbk-ok: https://github.com/mbk-ok
