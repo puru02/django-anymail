@@ -74,28 +74,36 @@ esp_extra support
 
 To use Mailjet features not directly supported by Anymail, you can
 set a message's :attr:`~anymail.message.AnymailMessage.esp_extra` to
-a `dict` of Mailjet's `Send API message json properties`_.
-Your :attr:`esp_extra` dict will be merged into each of the ``Messages``
-JSON objects Anymail has constructed for the send, with `esp_extra`
-having precedence in conflicts.
+a `dict` of Mailjet's `Send API body parameters`_.
+Your :attr:`esp_extra` dict will be deeply merged into the Mailjet
+API payload, with `esp_extra` having precedence in conflicts.
+
+(Note that it's *not* possible to merge into the ``"Messages"`` key;
+any value you supply would override ``"Messages"`` completely. Use ``"Globals"``
+for options to apply to all messages.)
 
 Example:
 
     .. code-block:: python
 
         message.esp_extra = {
-            # Some Mailjet v3.1 Send API message options:
-            "Priority": 3,  # Use Mailjet critically-high priority queue
-            "CustomID": my_event_tracking_id,
-            "TemplateErrorReporting": "dev+mailtemplatebug@example.com",
+            # Most "Messages" options can be included under Globals:
+            "Globals": {
+              "Priority": 3,  # Use Mailjet critically-high priority queue
+              "TemplateErrorReporting": {"Email": "dev+mailtemplatebug@example.com"},
+            },
+            # A few options must be at the root:
+            "SandboxMode": True,
+            "AdvanceErrorHandling": True,
+            # *Don't* try to set Messages:
+            # "Messages": [... this would override *all* recipients, not be merged ...]
         }
 
 
-(You can also set `"esp_extra"` in Anymail's
-:ref:`global send defaults <send-defaults>` to apply it to all
-messages.)
+(You can also set `"esp_extra"` in Anymail's :ref:`global send defaults <send-defaults>`
+to apply it to all messages.)
 
-.. _Send API message json properties:
+.. _Send API body parameters:
    https://dev.mailjet.com/email/reference/send-emails#v3_1_post_send
 
 

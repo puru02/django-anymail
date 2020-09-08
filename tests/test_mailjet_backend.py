@@ -56,9 +56,9 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         data = self.get_api_call_json()
         self.assertEqual(len(data['Messages']), 1)
         message = data['Messages'][0]
-        self.assertEqual(message['Subject'], "Subject here")
-        self.assertEqual(message['TextPart'], "Here is the message.")
-        self.assertEqual(message['From'], {"Email": "from@sender.example.com"})
+        self.assertEqual(data['Globals']['Subject'], "Subject here")
+        self.assertEqual(data['Globals']['TextPart'], "Here is the message.")
+        self.assertEqual(data['Globals']['From'], {"Email": "from@sender.example.com"})
         self.assertEqual(message['To'], [{"Email": "to@example.com"}])
 
     def test_name_addr(self):
@@ -75,12 +75,12 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         data = self.get_api_call_json()
         self.assertEqual(len(data['Messages']), 1)
         message = data['Messages'][0]
-        self.assertEqual(message['From'], {"Email": "from@example.com", "Name": "From Name"})
+        self.assertEqual(data['Globals']['From'], {"Email": "from@example.com", "Name": "From Name"})
         self.assertEqual(message['To'], [{"Email": "to1@example.com", "Name": "Recipient, #1"},
                                          {"Email": "to2@example.com"}])
-        self.assertEqual(message['Cc'], [{"Email": "cc1@example.com", "Name": "Carbon Copy"},
+        self.assertEqual(data['Globals']['Cc'], [{"Email": "cc1@example.com", "Name": "Carbon Copy"},
                                          {"Email": "cc2@example.com"}])
-        self.assertEqual(message['Bcc'], [{"Email": "bcc1@example.com", "Name": "Blind Copy"},
+        self.assertEqual(data['Globals']['Bcc'], [{"Email": "bcc1@example.com", "Name": "Blind Copy"},
                                           {"Email": "bcc2@example.com"}])
 
     def test_email_message(self):
@@ -95,17 +95,17 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         data = self.get_api_call_json()
         self.assertEqual(len(data['Messages']), 1)
         message = data['Messages'][0]
-        self.assertEqual(message['Subject'], "Subject")
-        self.assertEqual(message['TextPart'], "Body goes here")
-        self.assertEqual(message['From'], {"Email": "from@example.com"})
+        self.assertEqual(data['Globals']['Subject'], "Subject")
+        self.assertEqual(data['Globals']['TextPart'], "Body goes here")
+        self.assertEqual(data['Globals']['From'], {"Email": "from@example.com"})
         self.assertEqual(message['To'], [{"Email": "to1@example.com"},
                                          {"Email": "to2@example.com", "Name": "Also To"}])
-        self.assertEqual(message['Cc'], [{"Email": "cc1@example.com"},
+        self.assertEqual(data['Globals']['Cc'], [{"Email": "cc1@example.com"},
                                          {"Email": "cc2@example.com", "Name": "Also CC"}])
-        self.assertEqual(message['Bcc'], [{"Email": "bcc1@example.com"},
+        self.assertEqual(data['Globals']['Bcc'], [{"Email": "bcc1@example.com"},
                                           {"Email": "bcc2@example.com", "Name": "Also BCC"}])
-        self.assertEqual(message['Headers'], {'X-MyHeader': 'my value'})  # Reply-To should be moved to own param
-        self.assertEqual(message['ReplyTo'], {"Email": "another@example.com"})
+        self.assertEqual(data['Globals']['Headers'], {'X-MyHeader': 'my value'})  # Reply-To should be moved to own param
+        self.assertEqual(data['Globals']['ReplyTo'], {"Email": "another@example.com"})
 
     def test_html_message(self):
         text_content = 'This is an important message.'
@@ -118,10 +118,10 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         data = self.get_api_call_json()
         self.assertEqual(len(data['Messages']), 1)
         message = data['Messages'][0]
-        self.assertEqual(message['TextPart'], text_content)
-        self.assertEqual(message['HTMLPart'], html_content)
+        self.assertEqual(data['Globals']['TextPart'], text_content)
+        self.assertEqual(data['Globals']['HTMLPart'], html_content)
         # Don't accidentally send the html part as an attachment:
-        self.assertNotIn('Attachments', message)
+        self.assertNotIn('Attachments', data['Globals'])
 
     def test_html_only_message(self):
         html_content = '<p>This is an <strong>important</strong> message.</p>'
@@ -130,16 +130,14 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         email.send()
 
         data = self.get_api_call_json()
-        self.assertEqual(len(data['Messages']), 1)
-        message = data['Messages'][0]
-        self.assertNotIn('TextPart', message)
-        self.assertEqual(message['HTMLPart'], html_content)
+        self.assertNotIn('TextPart', data['Globals'])
+        self.assertEqual(data['Globals']['HTMLPart'], html_content)
 
     def test_extra_headers(self):
         self.message.extra_headers = {'X-Custom': 'string', 'X-Num': 123}
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['Headers'], {
+        self.assertEqual(data['Globals']['Headers'], {
             'X-Custom': 'string',
             'X-Num': 123,
         })
@@ -156,9 +154,8 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
                                   headers={'X-Other': 'Keep'})
         email.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertEqual(message['ReplyTo'], {"Email": "reply@example.com"})  # only the first reply_to
-        self.assertEqual(message['Headers'], {
+        self.assertEqual(data['Globals']['ReplyTo'], {"Email": "reply@example.com"})  # only the first reply_to
+        self.assertEqual(data['Globals']['Headers'], {
             'X-Other': 'Keep'
         })  # don't lose other headers
 
@@ -178,9 +175,7 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
 
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(len(data), 1)
-        message = data['Messages'][0]
-        attachments = message['Attachments']
+        attachments = data['Globals']['Attachments']
         self.assertEqual(len(attachments), 3)
         self.assertEqual(attachments[0]["Filename"], "test.txt")
         self.assertEqual(attachments[0]["ContentType"], "text/plain")
@@ -197,13 +192,13 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         self.assertEqual(decode_att(attachments[2]["Base64Content"]), pdf_content)
         self.assertNotIn('ContentID', attachments[2])
 
-        self.assertNotIn('InlinedAttachments', message)
+        self.assertNotIn('InlinedAttachments', data['Globals'])
 
     def test_unicode_attachment_correctly_decoded(self):
         self.message.attach("Une pièce jointe.html", '<p>\u2019</p>', mimetype='text/html')
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['Attachments'], [{
+        self.assertEqual(data['Globals']['Attachments'], [{
             'Filename': 'Une pièce jointe.html',
             'ContentType': 'text/html',
             'Base64Content': b64encode('<p>\u2019</p>'.encode('utf-8')).decode('ascii')
@@ -220,17 +215,16 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
 
         self.message.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertEqual(message['HTMLPart'], html_content)
+        self.assertEqual(data['Globals']['HTMLPart'], html_content)
 
-        attachments = message['InlinedAttachments']
+        attachments = data['Globals']['InlinedAttachments']
         self.assertEqual(len(attachments), 1)
         self.assertEqual(attachments[0]['Filename'], image_filename)
         self.assertEqual(attachments[0]['ContentID'], cid)
         self.assertEqual(attachments[0]['ContentType'], 'image/png')
         self.assertEqual(decode_att(attachments[0]["Base64Content"]), image_data)
 
-        self.assertNotIn('Attachments', message)
+        self.assertNotIn('Attachments', data['Globals'])
 
     def test_attached_images(self):
         image_filename = SAMPLE_IMAGE_FILENAME
@@ -246,7 +240,7 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
 
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['Attachments'], [
+        self.assertEqual(data['Globals']['Attachments'], [
             {
                 'Filename': image_filename,  # the named one
                 'ContentType': 'image/png',
@@ -283,19 +277,16 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         """Empty to, cc, bcc, and reply_to shouldn't generate empty fields"""
         self.message.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertNotIn('Cc', message)
-        self.assertNotIn('Bcc', message)
-        self.assertNotIn('ReplyTo', message)
+        self.assertNotIn('Cc', data['Globals'])
+        self.assertNotIn('Bcc', data['Globals'])
+        self.assertNotIn('ReplyTo', data['Globals'])
 
-        # Test empty `to` -- but send requires at least one recipient somewhere (like cc)
+    def test_empty_to_list(self):
+        # Mailjet v3.1 doesn't support cc-only or bcc-only messages
         self.message.to = []
         self.message.cc = ['cc@example.com']
-        self.message.send()
-        data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertNotIn('To', message)
-        self.assertEqual(message['Cc'], [{'Email': 'cc@example.com'}])
+        with self.assertRaisesMessage(AnymailUnsupportedFeature, "messages without any `to` recipients"):
+            self.message.send()
 
     def test_api_failure(self):
         self.set_mock_response(status_code=500)
@@ -339,7 +330,7 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.envelope_sender = "bounce-handler@bounces.example.com"
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['Sender'], {"Email": "bounce-handler@bounces.example.com"})
+        self.assertEqual(data['Globals']['Sender'], {"Email": "bounce-handler@bounces.example.com"})
 
     def test_metadata(self):
         # Mailjet expects the payload to be a single string
@@ -347,7 +338,7 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.metadata = {'user_id': "12345", 'items': 6}
         self.message.send()
         data = self.get_api_call_json()
-        self.assertJSONEqual(data['Messages'][0]['EventPayload'], {"user_id": "12345", "items": 6})
+        self.assertJSONEqual(data['Globals']['EventPayload'], {"user_id": "12345", "items": 6})
 
     def test_send_at(self):
         self.message.send_at = 1651820889  # 2022-05-06 07:08:09 UTC
@@ -358,7 +349,7 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.tags = ["receipt"]
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['CustomCampaign'], "receipt")
+        self.assertEqual(data['Globals']['CustomCampaign'], "receipt")
 
         self.message.tags = ["receipt", "repeat-user"]
         with self.assertRaisesMessage(AnymailUnsupportedFeature, 'multiple tags'):
@@ -368,18 +359,18 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.track_opens = True
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['TrackOpens'], 'enabled')
+        self.assertEqual(data['Globals']['TrackOpens'], 'enabled')
 
     def test_track_clicks(self):
         self.message.track_clicks = True
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['TrackClicks'], 'enabled')
+        self.assertEqual(data['Globals']['TrackClicks'], 'enabled')
 
         self.message.track_clicks = False
         self.message.send()
         data = self.get_api_call_json()
-        self.assertEqual(data['Messages'][0]['TrackClicks'], 'disabled')
+        self.assertEqual(data['Globals']['TrackClicks'], 'disabled')
 
     def test_template(self):
         # template_id can be str or int (but must be numeric ID -- not the template's name)
@@ -387,10 +378,9 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.merge_global_data = {'name': "Alice", 'group': "Developers"}
         self.message.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertEqual(message['TemplateID'], 1234567)  # must be integer
-        self.assertEqual(message['TemplateLanguage'], True)  # required to use variables
-        self.assertEqual(message['Variables'], {'name': "Alice", 'group': "Developers"})
+        self.assertEqual(data['Globals']['TemplateID'], 1234567)  # must be integer
+        self.assertEqual(data['Globals']['TemplateLanguage'], True)  # required to use variables
+        self.assertEqual(data['Globals']['Variables'], {'name': "Alice", 'group': "Developers"})
 
     def test_template_populate_from_sender(self):
         # v3.1 API allows omitting From param to use template's sender
@@ -398,12 +388,10 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.from_email = None  # must set to None after constructing EmailMessage
         self.message.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertNotIn('From', message)  # use template's sender as From
+        self.assertNotIn('From', data['Globals'])  # use template's sender as From
 
     def test_merge_data(self):
         self.message.to = ['alice@example.com', 'Bob <bob@example.com>']
-        self.message.cc = ['cc@example.com']
         self.message.merge_data = {
             'alice@example.com': {'name': "Alice", 'group': "Developers"},
             'bob@example.com': {'name': "Bob"},
@@ -417,13 +405,12 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.assertEqual(messages[0]['To'], [{"Email": "alice@example.com"}])
         self.assertEqual(messages[1]['To'], [{"Email": "bob@example.com", "Name": "Bob"}])
 
-        # cc gets copied to all recipients
-        self.assertEqual(messages[0]['Cc'], [{"Email": "cc@example.com"}])
-        self.assertEqual(messages[1]['Cc'], [{"Email": "cc@example.com"}])
+        # global merge_data is sent in Globals
+        self.assertEqual(data['Globals']['Variables'], {'group': "Default Group", 'global': "Global value"})
 
-        # per-recipient merge_data gets merged with globals
-        self.assertEqual(messages[0]['Variables'], {'name': "Alice", 'group': "Developers", 'global': "Global value"})
-        self.assertEqual(messages[1]['Variables'], {'name': "Bob", 'group': "Default Group", 'global': "Global value"})
+        # per-recipient merge_data is sent in Messages (and Mailjet will merge with Globals)
+        self.assertEqual(messages[0]['Variables'], {'name': "Alice", 'group': "Developers"})
+        self.assertEqual(messages[1]['Variables'], {'name': "Bob"})
 
     def test_merge_data_strips_none(self):
         """Work around a Mailjet API bug that silently fails to send when any Variables have null values"""
@@ -432,8 +419,8 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.message.send()
         data = self.get_api_call_json()
         # None (json null) should just get stripped, using the template default
-        self.assertEqual(data["Messages"][0]["Variables"],
-                         {"global_good": "good", "local_good": "good"})
+        self.assertEqual(data["Globals"]["Variables"], {"global_good": "good", "override": "global"})
+        self.assertEqual(data["Messages"][0]["Variables"], {"local_good": "good"})
 
     def test_merge_metadata(self):
         self.message.to = ['alice@example.com', 'Bob <bob@example.com>']
@@ -464,35 +451,35 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         """
         self.message.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertNotIn('CustomCampaign', message)
-        self.assertNotIn('EventPayload', message)
-        self.assertNotIn('HTMLPart', message)
-        self.assertNotIn('TemplateID', message)
-        self.assertNotIn('TemplateLanguage', message)
-        self.assertNotIn('Variables', message)
-        self.assertNotIn('TrackOpens', message)
-        self.assertNotIn('TrackClicks', message)
+        self.assertNotIn('CustomCampaign', data["Globals"])
+        self.assertNotIn('EventPayload', data["Globals"])
+        self.assertNotIn('HTMLPart', data["Globals"])
+        self.assertNotIn('TemplateID', data["Globals"])
+        self.assertNotIn('TemplateLanguage', data["Globals"])
+        self.assertNotIn('Variables', data["Globals"])
+        self.assertNotIn('TrackOpens', data["Globals"])
+        self.assertNotIn('TrackClicks', data["Globals"])
 
     def test_esp_extra(self):
-        # Anymail merges Mailjet esp_extra into message properties.
-        # (Not at the Send payload root, except for the special case "SandboxMode".)
+        # Anymail deep merges Mailjet esp_extra into the v3.1 Send API payload.
+        # Most options you'd want to override are in Globals, though a few are
+        # at the root. Note that it's *not* possible to merge into Messages
+        # (though you could completely replace it).
         self.message.esp_extra = {
-            'Sender': {'Email': 'sender@example.com', 'Name': 'sender name'},
-            'TemplateErrorDeliver': True,
-            'TemplateErrorReporting': 'bugs@example.com',
+            'Globals': {
+                'TemplateErrorDeliver': True,
+                'TemplateErrorReporting': 'bugs@example.com',
+            },
             'SandboxMode': True,
         }
         self.message.send()
         data = self.get_api_call_json()
-        message = data['Messages'][0]
-        self.assertEqual(message['Sender'], {'Email': 'sender@example.com', 'Name': 'sender name'})
-        self.assertEqual(message['TemplateErrorDeliver'], True)
-        self.assertEqual(message['TemplateErrorReporting'], 'bugs@example.com')
-
-        # SandboxMode gets hoisted to the payload root
+        self.assertEqual(data["Globals"]['TemplateErrorDeliver'], True)
+        self.assertEqual(data["Globals"]['TemplateErrorReporting'], 'bugs@example.com')
         self.assertIs(data['SandboxMode'], True)
-        self.assertNotIn('SandboxMode', message)
+        # Make sure the backend params are also still there
+        self.assertEqual(data["Globals"]['Subject'], "Subject")
+
 
     # noinspection PyUnresolvedReferences
     def test_send_attaches_anymail_status(self):
