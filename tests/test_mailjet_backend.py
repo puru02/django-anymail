@@ -412,16 +412,6 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         self.assertEqual(messages[0]['Variables'], {'name': "Alice", 'group': "Developers"})
         self.assertEqual(messages[1]['Variables'], {'name': "Bob"})
 
-    def test_merge_data_strips_none(self):
-        """Work around a Mailjet API bug that silently fails to send when any Variables have null values"""
-        self.message.merge_global_data = {"global_good": "good", "global_bad": None, "override": "global"}
-        self.message.merge_data = {"to@example.com": {"local_bad": None, "local_good": "good", "override": None}}
-        self.message.send()
-        data = self.get_api_call_json()
-        # None (json null) should just get stripped, using the template default
-        self.assertEqual(data["Globals"]["Variables"], {"global_good": "good", "override": "global"})
-        self.assertEqual(data["Messages"][0]["Variables"], {"local_good": "good"})
-
     def test_merge_metadata(self):
         self.message.to = ['alice@example.com', 'Bob <bob@example.com>']
         self.message.merge_metadata = {

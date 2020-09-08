@@ -115,14 +115,6 @@ class MailjetPayload(RequestsPayload):
             result["Name"] = email.display_name
         return result
 
-    @staticmethod
-    def _strip_none(variables):
-        """Return dict `variables` omitting any keys with `None` value"""
-        # Works around an Mailjet API bug where a null personalization variable results in a message
-        # that appears to succeed (with a MessageHref and everything), but never actually gets sent.
-        # (Reported to Mailjet ticket #830569 1/2018)
-        return {key: value for key, value in variables.items() if value is not None}
-
     def set_from_email(self, email):
         self.data["Globals"]["From"] = self._mailjet_email(email)
 
@@ -236,10 +228,10 @@ class MailjetPayload(RequestsPayload):
         for message in self.data["Messages"]:
             email = message["To"][0]["Email"]
             if email in merge_data:
-                message["Variables"] = self._strip_none(merge_data[email])
+                message["Variables"] = merge_data[email]
 
     def set_merge_global_data(self, merge_global_data):
-        self.data["Globals"]["Variables"] = self._strip_none(merge_global_data)
+        self.data["Globals"]["Variables"] = merge_global_data
 
     def set_esp_extra(self, extra):
         update_deep(self.data, extra)
