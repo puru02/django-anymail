@@ -37,6 +37,11 @@ Breaking changes
   (For compatibility with Django 1.11, stay on the Anymail `v7.2 LTS`_
   extended support branch by setting your requirements to `django-anymail~=7.2`.)
 
+* **Mailjet:** Upgrade to Mailjet's newer v3.1 send API. This change should be
+  transparent to most users, but if you are using Anymail's `esp_extra` with Mailjet,
+  you will need to update it for compatibility with the new API. (See
+  `docs <https://anymail.readthedocs.io/en/latest/esps/mailjet/#esp-extra-support>`__.)
+
 * Remove Anymail internal code related to supporting Python 2 and older Django
   versions. This does not change the documented API, but may affect you if your
   code borrowed from Anymail's undocumented internals. (You should be able to switch
