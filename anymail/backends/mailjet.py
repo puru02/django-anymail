@@ -1,9 +1,7 @@
-from requests.structures import CaseInsensitiveDict
-
 from .base_requests import AnymailRequestsBackend, RequestsPayload
 from ..exceptions import AnymailRequestsAPIError
 from ..message import AnymailRecipientStatus
-from ..utils import get_anymail_setting, parse_address_list, update_deep
+from ..utils import get_anymail_setting, update_deep
 
 
 class EmailBackend(AnymailRequestsBackend):
@@ -153,11 +151,7 @@ class MailjetPayload(RequestsPayload):
                 self.unsupported_feature("Multiple reply_to addresses")
 
     def set_extra_headers(self, headers):
-        case_insensitive_headers = CaseInsensitiveDict(headers)
-        reply_to = case_insensitive_headers.pop("Reply-To", None)
-        if reply_to is not None:
-            self.set_reply_to(parse_address_list([reply_to]))
-        self.data["Globals"]["Headers"] = dict(case_insensitive_headers)
+        self.data["Globals"]["Headers"] = headers
 
     def set_text_body(self, body):
         if body:  # Django's default empty text body confuses Mailjet (esp. templates)
