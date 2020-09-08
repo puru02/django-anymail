@@ -9,7 +9,8 @@ Anymail integrates with the `Mailjet`_ email service, using their transactional 
 
     Earlier Anymail versions used Mailjet's older `Send API v3`_. The change to v3.1 fixes
     some limitations of the earlier API, and should only affect your code if you use Anymail's
-    :ref:`esp_extra <mailjet-esp-extra>` feature to set API-specific options.
+    :ref:`esp_extra <mailjet-esp-extra>` feature to set API-specific options or if you are
+    trying to send messages with :ref:`multiple reply-to addresses <mailjet-quirks>`.
 
 
 .. _Mailjet: https://www.mailjet.com/
@@ -107,6 +108,7 @@ to apply it to all messages.)
    https://dev.mailjet.com/email/reference/send-emails#v3_1_post_send
 
 
+.. _mailjet-quirks:
 
 Limitations and quirks
 ----------------------
@@ -146,16 +148,15 @@ Limitations and quirks
 
 .. versionchanged:: 6.0
 
-  Earlier versions of Anymail were unable to mix ``cc`` or ``bcc`` fields
-  and :attr:`~anymail.message.AnymailMessage.merge_data` in the same Mailjet message.
-  This limitation was removed in Anymail 6.0.
+    Earlier versions of Anymail were unable to mix ``cc`` or ``bcc`` fields
+    and :attr:`~anymail.message.AnymailMessage.merge_data` in the same Mailjet message.
+    This limitation was removed in Anymail 6.0.
 
 .. versionchanged:: 8.0
 
-    Earlier Anymail versions used Mailjet's older v3 API, which had problems
-    with commas in recipient display names, and which didn't support cc or
-    bcc when using :attr:`~anymail.message.AnymailMessage.merge_data`. These
-    limitations have been removed in Mailjet's newer v3.1 API.
+    Earlier Anymail versions had special handling to work around a Mailjet v3 API bug
+    with commas in recipient display names. Anymail 8.0 uses Mailjet's v3.1 API, which
+    does not have the bug.
 
 
 .. _mailjet-templates:
