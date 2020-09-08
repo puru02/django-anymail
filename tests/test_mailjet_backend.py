@@ -79,9 +79,9 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         self.assertEqual(message['To'], [{"Email": "to1@example.com", "Name": "Recipient, #1"},
                                          {"Email": "to2@example.com"}])
         self.assertEqual(data['Globals']['Cc'], [{"Email": "cc1@example.com", "Name": "Carbon Copy"},
-                                         {"Email": "cc2@example.com"}])
+                                                 {"Email": "cc2@example.com"}])
         self.assertEqual(data['Globals']['Bcc'], [{"Email": "bcc1@example.com", "Name": "Blind Copy"},
-                                          {"Email": "bcc2@example.com"}])
+                                                  {"Email": "bcc2@example.com"}])
 
     def test_email_message(self):
         email = mail.EmailMessage(
@@ -101,10 +101,11 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
         self.assertEqual(message['To'], [{"Email": "to1@example.com"},
                                          {"Email": "to2@example.com", "Name": "Also To"}])
         self.assertEqual(data['Globals']['Cc'], [{"Email": "cc1@example.com"},
-                                         {"Email": "cc2@example.com", "Name": "Also CC"}])
+                                                 {"Email": "cc2@example.com", "Name": "Also CC"}])
         self.assertEqual(data['Globals']['Bcc'], [{"Email": "bcc1@example.com"},
-                                          {"Email": "bcc2@example.com", "Name": "Also BCC"}])
-        self.assertEqual(data['Globals']['Headers'], {'X-MyHeader': 'my value'})  # Reply-To should be moved to own param
+                                                  {"Email": "bcc2@example.com", "Name": "Also BCC"}])
+        self.assertEqual(data['Globals']['Headers'],
+                         {'X-MyHeader': 'my value'})  # Reply-To should be moved to own param
         self.assertEqual(data['Globals']['ReplyTo'], {"Email": "another@example.com"})
 
     def test_html_message(self):
@@ -117,7 +118,6 @@ class MailjetBackendStandardEmailTests(MailjetBackendMockAPITestCase):
 
         data = self.get_api_call_json()
         self.assertEqual(len(data['Messages']), 1)
-        message = data['Messages'][0]
         self.assertEqual(data['Globals']['TextPart'], text_content)
         self.assertEqual(data['Globals']['HTMLPart'], html_content)
         # Don't accidentally send the html part as an attachment:
@@ -470,7 +470,6 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
         # Make sure the backend params are also still there
         self.assertEqual(data["Globals"]['Subject'], "Subject")
 
-
     # noinspection PyUnresolvedReferences
     def test_send_attaches_anymail_status(self):
         """ The anymail_status should be attached to the message when it is sent """
@@ -486,7 +485,7 @@ class MailjetBackendAnymailFeatureTests(MailjetBackendMockAPITestCase):
             }]
         }).encode('utf-8')
         self.set_mock_response(raw=response_content)
-        msg = mail.EmailMessage('Subject', 'Message', 'from@example.com', ['to1@example.com'],)
+        msg = mail.EmailMessage('Subject', 'Message', 'from@example.com', ['to1@example.com'])
         sent = msg.send()
 
         self.assertEqual(sent, 1)
