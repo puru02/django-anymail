@@ -16,9 +16,10 @@ MAILJET_TEST_SECRET_KEY = os.getenv('MAILJET_TEST_SECRET_KEY')
 @unittest.skipUnless(MAILJET_TEST_API_KEY and MAILJET_TEST_SECRET_KEY,
                      "Set MAILJET_TEST_API_KEY and MAILJET_TEST_SECRET_KEY "
                      "environment variables to run Mailjet integration tests")
-@override_settings(ANYMAIL_MAILJET_API_KEY=MAILJET_TEST_API_KEY,
-                   ANYMAIL_MAILJET_SECRET_KEY=MAILJET_TEST_SECRET_KEY,
-                   ANYMAIL_MAILJET_ESP_EXTRA={"SandboxMode": True},  # don't actually send mail
+@override_settings(ANYMAIL={"MAILJET_API_KEY": MAILJET_TEST_API_KEY,
+                            "MAILJET_SECRET_KEY": MAILJET_TEST_SECRET_KEY,
+                            "MAILJET_SEND_DEFAULTS": {"esp_extra": {"SandboxMode": True}},  # don't actually send mail
+                            },
                    EMAIL_BACKEND="anymail.backends.mailjet.EmailBackend")
 class MailjetBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
     """Mailjet API integration tests
@@ -120,7 +121,8 @@ class MailjetBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
         recipient_status = message.anymail_status.recipients
         self.assertEqual(recipient_status['test+to1@anymail.info'].status, 'sent')
 
-    @override_settings(ANYMAIL_MAILJET_API_KEY="Hey, that's not an API key!")
+    @override_settings(ANYMAIL={"MAILJET_API_KEY": "Hey, that's not an API key!",
+                                "MAILJET_SECRET_KEY": "and this isn't the secret for it"})
     def test_invalid_api_key(self):
         with self.assertRaises(AnymailAPIError) as cm:
             self.message.send()
