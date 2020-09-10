@@ -4,6 +4,7 @@ import base64
 import copy
 import pickle
 from email.mime.image import MIMEImage
+from email.mime.text import MIMEText
 
 from django.http import QueryDict
 from django.test import SimpleTestCase, RequestFactory, override_settings
@@ -216,6 +217,11 @@ class NormalizedAttachmentTests(SimpleTestCase):
         att = Attachment(image, "ascii")
         self.assertFalse(att.inline)
         self.assertIsNone(att.content_id)  # ignored for non-inline Attachment
+
+    def test_content_type(self):
+        att = Attachment(MIMEText("text", "plain", "iso8859-1"), "ascii")
+        self.assertEqual(att.mimetype, "text/plain")
+        self.assertEqual(att.content_type, 'text/plain; charset="iso8859-1"')
 
 
 class LazyCoercionTests(SimpleTestCase):

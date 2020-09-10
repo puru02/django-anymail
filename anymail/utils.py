@@ -285,6 +285,7 @@ class Attachment:
             if self.content is None:
                 self.content = attachment.as_bytes()
             self.mimetype = attachment.get_content_type()
+            self.content_type = attachment["Content-Type"]  # includes charset if provided
 
             content_disposition = attachment.get_content_disposition()
             if content_disposition == 'inline' or (not content_disposition and 'Content-ID' in attachment):
@@ -294,6 +295,7 @@ class Attachment:
                     self.cid = unquote(self.content_id)  # without the <, >
         else:
             (self.name, self.content, self.mimetype) = attachment
+            self.content_type = self.mimetype
 
         self.name = force_non_lazy(self.name)
         self.content = force_non_lazy(self.content)
@@ -304,6 +306,8 @@ class Attachment:
             self.mimetype, _ = mimetypes.guess_type(self.name)
         if self.mimetype is None:
             self.mimetype = DEFAULT_ATTACHMENT_MIME_TYPE
+        if self.content_type is None:
+            self.content_type = self.mimetype
 
     @property
     def b64content(self):
