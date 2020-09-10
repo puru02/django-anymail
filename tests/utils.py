@@ -8,6 +8,7 @@ from base64 import b64decode
 from contextlib import contextmanager
 from io import StringIO
 from unittest import TestCase
+from unittest.util import safe_repr
 
 from django.test import Client
 
@@ -71,6 +72,38 @@ def sample_email_content(filename=SAMPLE_EMAIL_FILENAME):
 
 class AnymailTestMixin(TestCase):
     """Helpful additional methods for Anymail tests"""
+
+    def assertDictMatches(self, expected, actual, msg=None):
+        """
+        Tests that dict `expected` is a subset of `actual`. (That expected
+        is *in* actual. Note the args are in the same needle, haystack
+        order as assertIn.)
+        """
+        # This is just assertDictContainsSubset, and the code is copied in from there.
+        # (That was deprecated because apparently the arg order was confusing given the
+        # name. The "matches" terminology is borrowed from several JS expect packages.)
+        missing = []
+        mismatched = []
+        for key, value in expected.items():
+            if key not in actual:
+                missing.append(key)
+            elif value != actual[key]:
+                mismatched.append('%s, expected: %s, actual: %s' %
+                                  (safe_repr(key), safe_repr(value),
+                                   safe_repr(actual[key])))
+
+        if not (missing or mismatched):
+            return
+
+        standardMsg = ''
+        if missing:
+            standardMsg = 'Missing: %s' % ','.join(safe_repr(m) for m in missing)
+        if mismatched:
+            if standardMsg:
+                standardMsg += '; '
+            standardMsg += 'Mismatched values: %s' % ','.join(mismatched)
+
+        self.fail(self._formatMessage(msg, standardMsg))
 
     @contextmanager
     def assertDoesNotWarn(self, disallowed_warning=Warning):
