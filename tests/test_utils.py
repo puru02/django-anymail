@@ -159,6 +159,19 @@ class ParseAddressListTests(SimpleTestCase):
         with self.assertRaisesMessage(AnymailInvalidAddress, "Invalid email address"):
             parse_single_address(" ")
 
+    def test_no_newlines(self):
+        # (Parsing shouldn't even be able to even generate these cases,
+        # but in case anyone constructs an EmailAddress directly...)
+        for name, addr in [
+            ("Potential\nInjection", "addr@example.com"),
+            ("Potential\rInjection", "addr@example.com"),
+            ("Name", "potential\ninjection@example.com"),
+            ("Name", "potential\rinjection@example.com"),
+        ]:
+            with self.subTest(name=name, addr=addr):
+                with self.assertRaisesMessage(ValueError, "cannot contain newlines"):
+                    _ = EmailAddress(name, addr)
+
 
 class NormalizedAttachmentTests(SimpleTestCase):
     """Test utils.Attachment"""

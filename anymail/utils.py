@@ -212,6 +212,14 @@ class EmailAddress:
                 display_name, addr_spec = display_name  # unpack (name,addr) tuple
             except ValueError:
                 pass
+
+        # ESPs should clean or reject addresses containing newlines, but some
+        # extra protection can't hurt (and it seems to be a common oversight)
+        if '\n' in display_name or '\r' in display_name:
+            raise ValueError('EmailAddress display_name cannot contain newlines')
+        if '\n' in addr_spec or '\r' in addr_spec:
+            raise ValueError('EmailAddress addr_spec cannot contain newlines')
+
         self.display_name = display_name
         self.addr_spec = addr_spec
         try:
