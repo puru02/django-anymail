@@ -15,6 +15,8 @@ class EmailBackend(AnymailRequestsBackend):
         """Init options from Django settings"""
         self.api_key = get_anymail_setting('api_key', esp_name=self.esp_name,
                                            kwargs=kwargs, allow_bare=True)
+        self.subaccount = get_anymail_setting('subaccount', esp_name=self.esp_name,
+                                              kwargs=kwargs, default=None)
         api_url = get_anymail_setting('api_url', esp_name=self.esp_name, kwargs=kwargs,
                                       default="https://api.sparkpost.com/api/v1/")
         if not api_url.endswith("/"):
@@ -57,6 +59,8 @@ class SparkPostPayload(RequestsPayload):
             'Authorization': backend.api_key,
             'Content-Type': 'application/json',
         }
+        if backend.subaccount is not None:
+            http_headers['X-MSYS-SUBACCOUNT'] = backend.subaccount
         self.recipients = []  # all recipients, for backend parse_recipient_status
         self.cc_and_bcc = []  # for _finalize_recipients
         super().__init__(message, defaults, backend, headers=http_headers, *args, **kwargs)

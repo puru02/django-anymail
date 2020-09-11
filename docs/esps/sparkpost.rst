@@ -63,6 +63,25 @@ nor ``ANYMAIL_SPARKPOST_API_KEY`` is set.
 .. _SparkPost account API keys: https://app.sparkpost.com/account/credentials
 
 
+.. setting:: ANYMAIL_SPARKPOST_SUBACCOUNT
+
+.. rubric:: SPARKPOST_SUBACCOUNT
+
+.. versionadded:: 8.0
+
+An optional `SparkPost subaccount`_ numeric id. This can be used, along with the API key
+for the master account, to send mail on behalf of a subaccount. (Do not set this when
+using a subaccount's own API key.)
+
+Like all Anymail settings, you can include this in the global settings.py ANYMAIL dict
+to apply to all sends, or supply it as a :func:`~django.core.mail.get_connection`
+keyword parameter (``connection = get_connection(subaccount=123)``) to send a particular
+message with a subaccount. See :ref:`multiple-backends` for more information on using
+connections.
+
+.. _SparkPost subaccount: https://www.sparkpost.com/docs/user-guide/subaccounts/
+
+
 .. setting:: ANYMAIL_SPARKPOST_API_URL
 
 .. rubric:: SPARKPOST_API_URL

@@ -689,3 +689,17 @@ class SparkPostBackendConfigurationTests(SparkPostBackendMockAPITestCase):
         mail.send_mail('Subject', 'Message', 'from@example.com', ['to@example.com'],
                        connection=connection)
         self.assert_esp_called("https://api.sparkpost.com/api/labs/transmissions/")
+
+    def test_subaccount(self):
+        # A likely use case is supplying subaccount for a particular message.
+        # (For all messages, just set SPARKPOST_SUBACCOUNT in ANYMAIL settings.)
+        connection = mail.get_connection(subaccount=123)
+        mail.send_mail('Subject', 'Message', 'from@example.com', ['to@example.com'],
+                       connection=connection)
+        headers = self.get_api_call_headers()
+        self.assertEqual(headers["X-MSYS-SUBACCOUNT"], 123)
+
+        # Make sure we're not setting the header on non-subaccount sends
+        mail.send_mail('Subject', 'Message', 'from@example.com', ['to@example.com'])
+        headers = self.get_api_call_headers()
+        self.assertNotIn("X-MSYS-SUBACCOUNT", headers)

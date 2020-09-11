@@ -69,8 +69,10 @@ Breaking changes
 Features
 ~~~~~~~~
 
-* **SparkPost:** Add support for AMP for Email, via
-  ``message.attach_alternative("...AMPHTML content...", "text/x-amp-html")``.
+* **SparkPost:** Add support for subaccounts (new ``"SPARKPOST_SUBACCOUNT"`` Anymail
+  setting), AMP for Email (via ``message.attach_alternative(..., "text/x-amp-html")``),
+  and A/B testing and other SparkPost sending features (via ``esp_extra``). (See
+  `docs <https://anymail.readthedocs.io/en/latest/esps/sparkpost/>`__.)
 
 
 v7.2.1
