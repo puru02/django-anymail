@@ -66,7 +66,6 @@ class EmailBackend(AnymailRequestsBackend):
 class MailjetPayload(RequestsPayload):
 
     def __init__(self, message, defaults, backend, *args, **kwargs):
-        self.esp_extra = {}  # late-bound in serialize_data
         auth = (backend.api_key, backend.secret_key)
         http_headers = {
             'Content-Type': 'application/json',
