@@ -1,6 +1,6 @@
 from email.mime.image import MIMEImage
 from email.utils import unquote
-import os
+from pathlib import Path
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives, make_msgid
 
@@ -51,9 +51,9 @@ class AnymailMessage(AnymailMessageMixin, EmailMultiAlternatives):
 
 def attach_inline_image_file(message, path, subtype=None, idstring="img", domain=None):
     """Add inline image from file path to an EmailMessage, and return its content id"""
-    filename = os.path.basename(path)
-    with open(path, 'rb') as f:
-        content = f.read()
+    pathobj = Path(path)
+    filename = pathobj.name
+    content = pathobj.read_bytes()
     return attach_inline_image(message, content, filename, subtype, idstring, domain)
 
 

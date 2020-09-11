@@ -1,5 +1,4 @@
 # Anymail test utils
-import os
 import re
 import sys
 import uuid
@@ -7,6 +6,7 @@ import warnings
 from base64 import b64decode
 from contextlib import contextmanager
 from io import StringIO
+from pathlib import Path
 from unittest import TestCase
 from unittest.util import safe_repr
 
@@ -28,7 +28,7 @@ def rfc822_unfold(text):
 # Sample files for testing (in ./test_files subdir)
 #
 
-TEST_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_files')
+TEST_FILES_DIR = Path(__file__).parent.joinpath("test_files").resolve()
 
 SAMPLE_IMAGE_FILENAME = "sample_image.png"
 SAMPLE_EMAIL_FILENAME = "sample_email.txt"
@@ -36,14 +36,15 @@ SAMPLE_EMAIL_FILENAME = "sample_email.txt"
 
 def test_file_path(filename):
     """Returns path to a test file"""
-    return os.path.join(TEST_FILES_DIR, filename)
+    # Must convert to a plain str while we support Python 3.5,
+    # because django.core.mail uses os.path functions that don't
+    # accept pathlib.Path until Python 3.6.
+    return str(TEST_FILES_DIR.joinpath(filename))
 
 
 def test_file_content(filename):
     """Returns contents (bytes) of a test file"""
-    path = test_file_path(filename)
-    with open(path, "rb") as f:
-        return f.read()
+    return TEST_FILES_DIR.joinpath(filename).read_bytes()
 
 
 def sample_image_path(filename=SAMPLE_IMAGE_FILENAME):
