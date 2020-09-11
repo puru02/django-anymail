@@ -2,7 +2,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.test import SimpleTestCase
 from mock import patch
 
-from anymail.message import attach_inline_image
+from anymail.message import AnymailRecipientStatus, AnymailStatus, attach_inline_image
 
 from .utils import AnymailTestMixin, sample_image_content
 
@@ -29,3 +29,50 @@ class InlineImageTests(AnymailTestMixin, SimpleTestCase):
                                   domain="example.org")
         self.assertRegex(cid, r"[\w.]+@example\.org",
                          "Content-ID should be a valid Message-ID @example.org")
+
+
+class AnymailStatusTests(AnymailTestMixin, SimpleTestCase):
+    def test_single_recipient(self):
+        recipients = {
+            "one@example.com": AnymailRecipientStatus("12345", "sent"),
+        }
+        status = AnymailStatus()
+        status.set_recipient_status(recipients)
+        self.assertEqual(status.status, {"sent"})
+        self.assertEqual(status.message_id, "12345")
+        self.assertEqual(status.recipients, recipients)
+        self.assertEqual(repr(status),
+                         "AnymailStatus<status={'sent'}, message_id='12345', 1 recipients>")
+        self.assertEqual(repr(status.recipients["one@example.com"]),
+                         "AnymailRecipientStatus('12345', 'sent')")
+
+    def test_multiple_recipients(self):
+        recipients = {
+            "one@example.com": AnymailRecipientStatus("12345", "sent"),
+            "two@example.com": AnymailRecipientStatus("45678", "queued"),
+        }
+        status = AnymailStatus()
+        status.set_recipient_status(recipients)
+        self.assertEqual(status.status, {"queued", "sent"})
+        self.assertEqual(status.message_id, {"12345", "45678"})
+        self.assertEqual(status.recipients, recipients)
+        self.assertEqual(repr(status),
+                         "AnymailStatus<status={'queued', 'sent'}, message_id={'12345', '45678'}, 2 recipients>")
+
+    def test_multiple_recipients_same_message_id(self):
+        # status.message_id collapses when it's the same for all recipients
+        recipients = {
+            "one@example.com": AnymailRecipientStatus("12345", "sent"),
+            "two@example.com": AnymailRecipientStatus("12345", "queued"),
+        }
+        status = AnymailStatus()
+        status.set_recipient_status(recipients)
+        self.assertEqual(status.message_id, "12345")
+        self.assertEqual(repr(status),
+                         "AnymailStatus<status={'queued', 'sent'}, message_id='12345', 2 recipients>")
+
+    def test_none(self):
+        status = AnymailStatus()
+        self.assertIsNone(status.status)
+        self.assertIsNone(status.message_id)
+        self.assertEqual(repr(status), "AnymailStatus<status=None>")

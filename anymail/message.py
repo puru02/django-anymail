@@ -88,6 +88,10 @@ class AnymailRecipientStatus:
         self.message_id = message_id  # ESP message id
         self.status = status  # one of ANYMAIL_STATUSES, or None for not yet sent to ESP
 
+    def __repr__(self):
+        return "AnymailRecipientStatus({message_id!r}, {status!r})".format(
+            message_id=self.message_id, status=self.status)
+
 
 class AnymailStatus:
     """Information about an EmailMessage's send status for all recipients"""
@@ -97,6 +101,21 @@ class AnymailStatus:
         self.status = None  # set of ANYMAIL_STATUSES across all recipients, or None for not yet sent to ESP
         self.recipients = {}  # per-recipient: { email: AnymailRecipientStatus, ... }
         self.esp_response = None
+
+    def __repr__(self):
+        def _repr(o):
+            if isinstance(o, set):
+                # force sorted order, for reproducible testing
+                item_reprs = [repr(item) for item in sorted(o)]
+                return "{%s}" % ", ".join(item_reprs)
+            else:
+                return repr(o)
+        details = ["status={status}".format(status=_repr(self.status))]
+        if self.message_id:
+            details.append("message_id={message_id}".format(message_id=_repr(self.message_id)))
+        if self.recipients:
+            details.append("{num_recipients} recipients".format(num_recipients=len(self.recipients)))
+        return "AnymailStatus<{details}>".format(details=", ".join(details))
 
     def set_recipient_status(self, recipients):
         self.recipients.update(recipients)
