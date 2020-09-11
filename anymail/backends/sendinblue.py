@@ -35,15 +35,6 @@ class EmailBackend(AnymailRequestsBackend):
     def build_message_payload(self, message, defaults):
         return SendinBluePayload(message, defaults, self)
 
-    def raise_for_status(self, response, payload, message):
-        if response.status_code < 200 or response.status_code >= 300:
-            raise AnymailRequestsAPIError(
-                email_message=message,
-                payload=payload,
-                response=response,
-                backend=self,
-            )
-
     def parse_recipient_status(self, response, payload, message):
         # SendinBlue doesn't give any detail on a success
         # https://developers.sendinblue.com/docs/responses

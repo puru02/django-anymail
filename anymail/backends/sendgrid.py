@@ -5,7 +5,7 @@ from email.utils import quote as rfc822_quote
 from requests.structures import CaseInsensitiveDict
 
 from .base_requests import AnymailRequestsBackend, RequestsPayload
-from ..exceptions import AnymailConfigurationError, AnymailRequestsAPIError, AnymailWarning
+from ..exceptions import AnymailConfigurationError, AnymailWarning
 from ..message import AnymailRecipientStatus
 from ..utils import BASIC_NUMERIC_TYPES, Mapping, get_anymail_setting, update_deep
 
@@ -51,11 +51,6 @@ class EmailBackend(AnymailRequestsBackend):
 
     def build_message_payload(self, message, defaults):
         return SendGridPayload(message, defaults, self)
-
-    def raise_for_status(self, response, payload, message):
-        if response.status_code < 200 or response.status_code >= 300:
-            raise AnymailRequestsAPIError(email_message=message, payload=payload, response=response,
-                                          backend=self)
 
     def parse_recipient_status(self, response, payload, message):
         # If we get here, the send call was successful.

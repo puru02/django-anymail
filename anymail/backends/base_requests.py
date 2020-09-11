@@ -87,9 +87,10 @@ class AnymailRequestsBackend(AnymailBaseBackend):
         (though should defer parsing/deserialization of the body to
         parse_recipient_status)
         """
-        if response.status_code != 200:
-            raise AnymailRequestsAPIError(email_message=message, payload=payload, response=response,
-                                          backend=self)
+        if response.status_code < 200 or response.status_code >= 300:
+            raise AnymailRequestsAPIError(
+                email_message=message, payload=payload,
+                response=response, backend=self)
 
     def deserialize_json_response(self, response, payload, message):
         """Deserialize an ESP API response that's in json.
