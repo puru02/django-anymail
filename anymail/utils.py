@@ -229,6 +229,10 @@ class EmailAddress:
             self.username = addr_spec
             self.domain = ''
 
+    def __repr__(self):
+        return "EmailAddress({display_name!r}, {addr_spec!r})".format(
+            display_name=self.display_name, addr_spec=self.addr_spec)
+
     @property
     def address(self):
         if self._address is None:
@@ -308,6 +312,18 @@ class Attachment:
             self.mimetype = DEFAULT_ATTACHMENT_MIME_TYPE
         if self.content_type is None:
             self.content_type = self.mimetype
+
+    def __repr__(self):
+        details = [
+            self.mimetype,
+            "len={length}".format(length=len(self.content)),
+        ]
+        if self.name:
+            details.append("name={name!r}".format(name=self.name))
+        if self.inline:
+            details.insert(0, "inline")
+            details.append("content_id={content_id!r}".format(content_id=self.content_id))
+        return "Attachment<{details}>".format(details=", ".join(details))
 
     @property
     def b64content(self):

@@ -173,6 +173,10 @@ class ParseAddressListTests(SimpleTestCase):
                 with self.assertRaisesMessage(ValueError, "cannot contain newlines"):
                     _ = EmailAddress(name, addr)
 
+    def test_email_address_repr(self):
+        self.assertEqual("EmailAddress('Name', 'addr@example.com')",
+                         repr(EmailAddress('Name', 'addr@example.com')))
+
 
 class NormalizedAttachmentTests(SimpleTestCase):
     """Test utils.Attachment"""
@@ -188,6 +192,7 @@ class NormalizedAttachmentTests(SimpleTestCase):
         self.assertFalse(att.inline)
         self.assertIsNone(att.content_id)
         self.assertEqual(att.cid, "")
+        self.assertEqual(repr(att), "Attachment<image/x-emoticon, len=3, name='emoticon.txt'>")
 
     def test_content_disposition_inline(self):
         image = MIMEImage(b";-)", "x-emoticon")
@@ -198,11 +203,14 @@ class NormalizedAttachmentTests(SimpleTestCase):
         self.assertTrue(att.inline)  # even without the Content-ID
         self.assertIsNone(att.content_id)
         self.assertEqual(att.cid, "")
+        self.assertEqual(repr(att), "Attachment<inline, image/x-emoticon, len=3, content_id=None>")
 
         image["Content-ID"] = "<abc123@example.net>"
         att = Attachment(image, "ascii")
         self.assertEqual(att.content_id, "<abc123@example.net>")
         self.assertEqual(att.cid, "abc123@example.net")
+        self.assertEqual(repr(att),
+                         "Attachment<inline, image/x-emoticon, len=3, content_id='<abc123@example.net>'>")
 
     def test_content_id_implies_inline(self):
         """A MIME object with a Content-ID should be assumed to be inline"""
@@ -211,17 +219,21 @@ class NormalizedAttachmentTests(SimpleTestCase):
         att = Attachment(image, "ascii")
         self.assertTrue(att.inline)
         self.assertEqual(att.content_id, "<abc123@example.net>")
+        self.assertEqual(repr(att),
+                         "Attachment<inline, image/x-emoticon, len=3, content_id='<abc123@example.net>'>")
 
         # ... but not if explicit Content-Disposition says otherwise
         image["Content-Disposition"] = "attachment"
         att = Attachment(image, "ascii")
         self.assertFalse(att.inline)
         self.assertIsNone(att.content_id)  # ignored for non-inline Attachment
+        self.assertEqual(repr(att), "Attachment<image/x-emoticon, len=3>")
 
     def test_content_type(self):
         att = Attachment(MIMEText("text", "plain", "iso8859-1"), "ascii")
         self.assertEqual(att.mimetype, "text/plain")
         self.assertEqual(att.content_type, 'text/plain; charset="iso8859-1"')
+        self.assertEqual(repr(att), "Attachment<text/plain, len=4>")
 
 
 class LazyCoercionTests(SimpleTestCase):
