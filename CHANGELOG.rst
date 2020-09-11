@@ -43,6 +43,18 @@ Breaking changes
   need to update it for compatibility with the new API. (See
   `docs <https://anymail.readthedocs.io/en/latest/esps/mailjet/#esp-extra-support>`__.)
 
+* **SparkPost:** Switch away from the (now unmaintained) Python SparkPost library to
+  calling the SparkPost API directly. The "sparkpost" package is no longer necessary and
+  can be removed from your project requirements. Most SparkPost users will not be
+  affected by this change, with two exceptions: (1) You must provide a
+  ``SPARKPOST_API_KEY`` in your Anymail settings (Anymail does not check environment
+  variables); and (2) if you use Anymail's `esp_extra` you will need to update it with
+  SparkPost Transmissions API parameters.
+
+  As part of this change esp_extra now allows use of several SparkPost features, such
+  as A/B testing, that were unavailable through the Python SparkPost library. (See
+  `docs <https://anymail.readthedocs.io/en/latest/esps/sparkpost/>`__.)
+
 * Remove Anymail internal code related to supporting Python 2 and older Django
   versions. This does not change the documented API, but may affect you if your
   code borrowed from Anymail's undocumented internals. (You should be able to switch
@@ -53,6 +65,12 @@ Breaking changes
   about "consistent method resolution order," you probably need to change your class's
   inheritance. (For some helpful background, see this comment about
   `mixin superclass ordering <https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html#comment_13805>`__.)
+
+Features
+~~~~~~~~
+
+* **SparkPost:** Add support for AMP for Email, via
+  ``message.attach_alternative("...AMPHTML content...", "text/x-amp-html")``.
 
 
 v7.2.1

@@ -54,11 +54,11 @@ setup(
         "postmark": [],
         "sendgrid": [],
         "sendinblue": [],
-        "sparkpost": ["sparkpost"],
+        "sparkpost": [],
     },
     include_package_data=True,
     test_suite="runtests.runtests",
-    tests_require=["mock", "boto3", "sparkpost"],
+    tests_require=["mock", "boto3"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python",

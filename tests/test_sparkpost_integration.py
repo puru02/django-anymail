@@ -1,6 +1,5 @@
 import os
 import unittest
-import warnings
 from datetime import datetime, timedelta
 
 from django.test import SimpleTestCase, override_settings, tag
@@ -41,19 +40,6 @@ class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
                                       'test@test-sp.anymail.info', ['to@test.sink.sparkpostmail.com'])
         self.message.attach_alternative('<p>HTML content</p>', "text/html")
 
-        # The SparkPost Python package uses requests directly, without managing sessions, and relies
-        # on GC to close connections. This leads to harmless (but valid) warnings about unclosed
-        # ssl.SSLSocket during cleanup: https://github.com/psf/requests/issues/1882
-        # There's not much we can do about that, short of switching from the SparkPost package
-        # to our own requests backend implementation (which *does* manage sessions properly).
-        # Unless/until we do that, filter the warnings to avoid test noise.
-        # Filter in TestCase.setUp because unittest resets the warning filters for each test.
-        # https://stackoverflow.com/a/26620811/647002
-        from anymail.backends.base_requests import AnymailRequestsBackend
-        from anymail.backends.sparkpost import EmailBackend as SparkPostBackend
-        assert not issubclass(SparkPostBackend, AnymailRequestsBackend)  # else this filter can be removed
-        warnings.filterwarnings("ignore", message=r"unclosed <ssl\.SSLSocket", category=ResourceWarning)
-
     def test_simple_send(self):
         # Example of getting the SparkPost send status and transmission id from the message
         sent_count = self.message.send()
@@ -73,6 +59,8 @@ class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
         message = AnymailMessage(
             subject="Anymail all-options integration test",
             body="This is the text body",
+            # Caution: although SparkPost allows multiple From addresses,
+            # many ISPs will just bounce email that tries it...
             from_email="Test From <test@test-sp.anymail.info>, also-from@test-sp.anymail.info",
             to=["to1@test.sink.sparkpostmail.com", "Recipient 2 <to2@test.sink.sparkpostmail.com>"],
             # Limit the live b/cc's to avoid running through our small monthly allowance:

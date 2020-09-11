@@ -91,7 +91,7 @@ Or:
 
     .. code-block:: console
 
-        $ pip install mock boto3 sparkpost  # install test dependencies
+        $ pip install mock boto3  # install test dependencies
         $ python runtests.py
 
         ## this command can also run just a few test cases, e.g.:

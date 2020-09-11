@@ -12,11 +12,6 @@ used with Django's batch-sending functions :func:`~django.core.mail.send_mass_ma
 :meth:`connection.send_messages`. See :ref:`django:topics-sending-multiple-emails`
 in the Django docs for more info and an example.
 
-(The exception is when Anymail wraps an ESP's official Python package, and that
-package doesn't support connection reuse. Django's batch-sending functions will
-still work, but will incur the overhead of creating a separate connection for each
-message sent. Currently, only SparkPost has this limitation.)
-
 If you need even more performance, you may want to consider your ESP's batch-sending
 features. When supported by your ESP, Anymail can send multiple messages with a single
 API call. See :ref:`batch-send` for details, and be sure to check the

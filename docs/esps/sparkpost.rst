@@ -4,22 +4,20 @@ SparkPost
 =========
 
 Anymail integrates with the `SparkPost`_ email service, using their
-Python :pypi:`sparkpost` API client package.
+`Transmissions API`_.
+
+.. versionchanged:: 8.0
+
+    Earlier Anymail versions used the official Python :pypi:`sparkpost` API client.
+    That library is no longer maintained, and Anymail now calls SparkPost's HTTP API
+    directly. This change should not affect most users, but you should make sure you
+    provide :setting:`SPARKPOST_API_KEY <ANYMAIL_SPARKPOST_API_KEY>` in your
+    Anymail settings (Anymail doesn't check environment variables), and if you are
+    using Anymail's :ref:`esp_extra <sparkpost-esp-extra>` you will need to update that
+    to use Transmissions API parameters.
 
 .. _SparkPost: https://www.sparkpost.com/
-
-
-Installation
-------------
-
-You must ensure the :pypi:`sparkpost` package is installed to use Anymail's SparkPost
-backend. Either include the "sparkpost" option when you install Anymail:
-
-    .. code-block:: console
-
-        $ pip install "django-anymail[sparkpost]"
-
-or separately run `pip install sparkpost`.
+.. _Transmissions API: https://developers.sparkpost.com/api/transmissions/
 
 
 Settings
@@ -44,9 +42,6 @@ in your settings.py.
 A SparkPost API key with at least the "Transmissions: Read/Write" permission.
 (Manage API keys in your `SparkPost account API keys`_.)
 
-This setting is optional; if not provided, the SparkPost API client will attempt
-to read your API key from the `SPARKPOST_API_KEY` environment variable.
-
   .. code-block:: python
 
       ANYMAIL = {
@@ -58,6 +53,13 @@ Anymail will also look for ``SPARKPOST_API_KEY`` at the
 root of the settings file if neither ``ANYMAIL["SPARKPOST_API_KEY"]``
 nor ``ANYMAIL_SPARKPOST_API_KEY`` is set.
 
+.. versionchanged:: 8.0
+
+    This setting is required. If you store your API key in an environment variable, load
+    it into your Anymail settings: ``"SPARKPOST_API_KEY": os.environ["SPARKPOST_API_KEY"]``.
+    (Earlier Anymail releases used the SparkPost Python library, which would look for
+    the environment variable.)
+
 .. _SparkPost account API keys: https://app.sparkpost.com/account/credentials
 
 
@@ -65,8 +67,7 @@ nor ``ANYMAIL_SPARKPOST_API_KEY`` is set.
 
 .. rubric:: SPARKPOST_API_URL
 
-The `SparkPost API Endpoint`_ to use. This setting is optional; if not provided, Anymail will
-use the :pypi:`python-sparkpost` client default endpoint (``"https://api.sparkpost.com/api/v1"``).
+The `SparkPost API Endpoint`_ to use. The default is ``"https://api.sparkpost.com/api/v1"``.
 
 Set this to use a SparkPost EU account, or to work with any other API endpoint including
 SparkPost Enterprise API and SparkPost Labs.
@@ -79,8 +80,6 @@ SparkPost Enterprise API and SparkPost Labs.
       }
 
 You must specify the full, versioned API endpoint as shown above (not just the base_uri).
-This setting only affects Anymail's calls to SparkPost, and will not apply to other code
-using :pypi:`python-sparkpost`.
 
 .. _SparkPost API Endpoint: https://developers.sparkpost.com/api/index.html#header-api-endpoints
 
@@ -90,28 +89,47 @@ using :pypi:`python-sparkpost`.
 esp_extra support
 -----------------
 
-To use SparkPost features not directly supported by Anymail, you can
-set a message's :attr:`~anymail.message.AnymailMessage.esp_extra` to
-a `dict` of parameters for python-sparkpost's `transmissions.send method`_.
-Any keys in your :attr:`esp_extra` dict will override Anymail's normal
-values for that parameter.
+To use SparkPost features not directly supported by Anymail, you can set
+a message's :attr:`~anymail.message.AnymailMessage.esp_extra` to a `dict`
+of `transmissions API request body`_ data. Anymail will deeply merge your overrides
+into the normal API payload it has constructed, with esp_extra taking precedence
+in conflicts.
 
-Example:
+Example (you probably wouldn't combine all of these options at once):
 
     .. code-block:: python
 
         message.esp_extra = {
-            'transactional': True,  # treat as transactional for unsubscribe and suppression
-            'description': "Marketing test-run for new templates",
-            'use_draft_template': True,
+            "options": {
+                # Treat as transactional for unsubscribe and suppression:
+                "transactional": True,
+                # Override your default dedicated IP pool:
+                "ip_pool": "transactional_pool",
+            },
+            # Add a description:
+            "description": "Test-run for new templates",
+            "content": {
+                # Use draft rather than published template:
+                "use_draft_template": True,
+                # Use an A/B test:
+                "ab_test_id": "highlight_support_links",
+            },
+            # Use a stored recipients list (overrides message to/cc/bcc):
+            "recipients": {
+                "list_id": "design_team"
+            },
         }
 
+Note that including ``"recipients"`` in esp_extra will *completely* override the
+recipients list Anymail generates from your message's to/cc/bcc fields, along with any
+per-recipient :attr:`~anymail.message.AnymailMessage.merge_data` and
+:attr:`~anymail.message.AnymailMessage.merge_metadata`.
 
 (You can also set `"esp_extra"` in Anymail's :ref:`global send defaults <send-defaults>`
 to apply it to all messages.)
 
-.. _transmissions.send method:
-    https://python-sparkpost.readthedocs.io/en/latest/api/transmissions.html#sparkpost.transmissions.Transmissions.send
+.. _transmissions API request body:
+    https://developers.sparkpost.com/api/transmissions/#header-request-body
 
 
 
@@ -150,6 +168,13 @@ Limitations and quirks
 
   (SparkPost's "recipient tags" are not available for tagging *messages*.
   They're associated with individual *addresses* in stored recipient lists.)
+
+**AMP for Email**
+  SparkPost supports sending AMPHTML email content. To include it, use
+  ``message.attach_alternative("...AMPHTML content...", "text/x-amp-html")``
+  (and be sure to also include regular HTML and/or text bodies, too).
+
+  .. versionadded:: 8.0
 
 **Envelope sender may use domain only**
   Anymail's :attr:`~anymail.message.AnymailMessage.envelope_sender` is used to

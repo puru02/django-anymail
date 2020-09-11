@@ -1,82 +1,46 @@
-from .base import AnymailBaseBackend, BasePayload
-from ..exceptions import AnymailAPIError, AnymailImproperlyInstalled, AnymailConfigurationError
+from .base_requests import AnymailRequestsBackend, RequestsPayload
+from ..exceptions import AnymailRequestsAPIError
 from ..message import AnymailRecipientStatus
-from ..utils import get_anymail_setting
-
-try:
-    from sparkpost import SparkPost, SparkPostException
-except ImportError as err:
-    raise AnymailImproperlyInstalled(missing_package='sparkpost', backend='sparkpost') from err
+from ..utils import get_anymail_setting, update_deep
 
 
-class EmailBackend(AnymailBaseBackend):
+class EmailBackend(AnymailRequestsBackend):
     """
-    SparkPost Email Backend (using python-sparkpost client)
+    SparkPost Email Backend
     """
 
     esp_name = "SparkPost"
 
     def __init__(self, **kwargs):
         """Init options from Django settings"""
-        super().__init__(**kwargs)
-        # SPARKPOST_API_KEY is optional - library reads from env by default
         self.api_key = get_anymail_setting('api_key', esp_name=self.esp_name,
-                                           kwargs=kwargs, allow_bare=True, default=None)
-
-        # SPARKPOST_API_URL is optional - default is set by library;
-        # if provided, must be a full SparkPost API endpoint, including "/v1" if appropriate
-        api_url = get_anymail_setting('api_url', esp_name=self.esp_name, kwargs=kwargs, default=None)
-        extra_sparkpost_params = {}
-        if api_url is not None:
-            if api_url.endswith("/"):
-                api_url = api_url[:-1]
-            extra_sparkpost_params['base_uri'] = _FullSparkPostEndpoint(api_url)
-
-        try:
-            self.sp = SparkPost(self.api_key, **extra_sparkpost_params)  # SparkPost API instance
-        except SparkPostException as err:
-            # This is almost certainly a missing API key
-            raise AnymailConfigurationError(
-                "Error initializing SparkPost: %s\n"
-                "You may need to set ANYMAIL = {'SPARKPOST_API_KEY': ...} "
-                "or ANYMAIL_SPARKPOST_API_KEY in your Django settings, "
-                "or SPARKPOST_API_KEY in your environment." % str(err)
-            ) from err
-
-    # Note: SparkPost python API doesn't expose requests session sharing
-    # (so there's no need to implement open/close connection management here)
+                                           kwargs=kwargs, allow_bare=True)
+        api_url = get_anymail_setting('api_url', esp_name=self.esp_name, kwargs=kwargs,
+                                      default="https://api.sparkpost.com/api/v1/")
+        if not api_url.endswith("/"):
+            api_url += "/"
+        super().__init__(api_url, **kwargs)
 
     def build_message_payload(self, message, defaults):
         return SparkPostPayload(message, defaults, self)
 
-    def post_to_esp(self, payload, message):
-        params = payload.get_api_params()
-        try:
-            response = self.sp.transmissions.send(**params)
-        except SparkPostException as err:
-            raise AnymailAPIError(
-                str(err), backend=self, email_message=message, payload=payload,
-                response=getattr(err, 'response', None),  # SparkPostAPIException requests.Response
-                status_code=getattr(err, 'status', None),  # SparkPostAPIException HTTP status_code
-            ) from err
-        return response
-
     def parse_recipient_status(self, response, payload, message):
+        parsed_response = self.deserialize_json_response(response, payload, message)
         try:
-            accepted = response['total_accepted_recipients']
-            rejected = response['total_rejected_recipients']
-            transmission_id = response['id']
+            results = parsed_response["results"]
+            accepted = results["total_accepted_recipients"]
+            rejected = results["total_rejected_recipients"]
+            transmission_id = results["id"]
         except (KeyError, TypeError) as err:
-            raise AnymailAPIError(
-                "%s in SparkPost.transmissions.send result %r" % (str(err), response),
-                backend=self, email_message=message, payload=payload,
-            ) from err
+            raise AnymailRequestsAPIError("Invalid SparkPost API response format",
+                                          email_message=message, payload=payload,
+                                          response=response, backend=self) from err
 
         # SparkPost doesn't (yet*) tell us *which* recipients were accepted or rejected.
         # (* looks like undocumented 'rcpt_to_errors' might provide this info.)
         # If all are one or the other, we can report a specific status;
         # else just report 'unknown' for all recipients.
-        recipient_count = len(payload.all_recipients)
+        recipient_count = len(payload.recipients)
         if accepted == recipient_count and rejected == 0:
             status = 'queued'
         elif rejected == recipient_count and accepted == 0:
@@ -84,174 +48,202 @@ class EmailBackend(AnymailBaseBackend):
         else:  # mixed results, or wrong total
             status = 'unknown'
         recipient_status = AnymailRecipientStatus(message_id=transmission_id, status=status)
-        return {recipient.addr_spec: recipient_status for recipient in payload.all_recipients}
+        return {recipient.addr_spec: recipient_status for recipient in payload.recipients}
 
 
-class SparkPostPayload(BasePayload):
-    def init_payload(self):
-        self.params = {}
-        self.all_recipients = []
-        self.to_emails = []
-        self.merge_data = {}
-        self.merge_metadata = {}
+class SparkPostPayload(RequestsPayload):
+    def __init__(self, message, defaults, backend, *args, **kwargs):
+        http_headers = {
+            'Authorization': backend.api_key,
+            'Content-Type': 'application/json',
+        }
+        self.recipients = []  # all recipients, for backend parse_recipient_status
+        self.cc_and_bcc = []  # for _finalize_recipients
+        super().__init__(message, defaults, backend, headers=http_headers, *args, **kwargs)
 
-    def get_api_params(self):
-        # Compose recipients param from to_emails and merge_data (if any)
-        recipients = []
+    def get_api_endpoint(self):
+        return "transmissions/"
+
+    def serialize_data(self):
+        self._finalize_recipients()
+        return self.serialize_json(self.data)
+
+    def _finalize_recipients(self):
+        # https://www.sparkpost.com/docs/faq/cc-bcc-with-rest-api/
+        # self.data["recipients"] is currently a list of all to-recipients. We need to add
+        # all cc and bcc recipients. Exactly how depends on whether this is a batch send.
         if self.is_batch():
-            # Build JSON recipient structures
-            for email in self.to_emails:
-                rcpt = {'address': {'email': email.addr_spec}}
-                if email.display_name:
-                    rcpt['address']['name'] = email.display_name
-                try:
-                    rcpt['substitution_data'] = self.merge_data[email.addr_spec]
-                except KeyError:
-                    pass  # no merge_data or none for this recipient
-                try:
-                    rcpt['metadata'] = self.merge_metadata[email.addr_spec]
-                except KeyError:
-                    pass  # no merge_metadata or none for this recipient
-                recipients.append(rcpt)
+            # For batch sends, must duplicate the cc/bcc for *every* to-recipient
+            # (using each to-recipient's metadata and substitutions).
+            extra_recipients = []
+            for to_recipient in self.data["recipients"]:
+                for email in self.cc_and_bcc:
+                    extra = to_recipient.copy()  # capture "metadata" and "substitutions", if any
+                    extra["address"] = {
+                        "email": email.addr_spec,
+                        "header_to": to_recipient["address"]["header_to"],
+                    }
+                    extra_recipients.append(extra)
+            self.data["recipients"].extend(extra_recipients)
         else:
-            # Just use simple recipients list
-            recipients = [email.address for email in self.to_emails]
-        if recipients:
-            self.params['recipients'] = recipients
+            # For non-batch sends, we need to patch up *everyone's* displayed
+            # "To" header to show all the "To" recipients...
+            full_to_header = ", ".join(
+                to_recipient["address"]["header_to"]
+                for to_recipient in self.data["recipients"])
+            for recipient in self.data["recipients"]:
+                recipient["address"]["header_to"] = full_to_header
+            # ... and then simply add the cc/bcc to the end of the list.
+            # (There is no per-recipient data, or it would be a batch send.)
+            self.data["recipients"].extend(
+                {"address": {
+                    "email": email.addr_spec,
+                    "header_to": full_to_header,
+                }}
+                for email in self.cc_and_bcc)
 
-        # Must remove empty string "content" params when using stored template
-        if self.params.get('template', None):
-            for content_param in ['subject', 'text', 'html']:
-                try:
-                    if not self.params[content_param]:
-                        del self.params[content_param]
-                except KeyError:
-                    pass
+    #
+    # Payload construction
+    #
 
-        return self.params
+    def init_payload(self):
+        # The JSON payload:
+        self.data = {
+            "content": {},
+            "recipients": [],
+        }
 
     def set_from_email_list(self, emails):
         # SparkPost supports multiple From email addresses,
         # as a single comma-separated string
-        self.params['from_email'] = ", ".join([email.address for email in emails])
+        self.data["content"]["from"] = ", ".join(email.address for email in emails)
 
     def set_to(self, emails):
         if emails:
-            self.to_emails = emails  # bound to params['recipients'] in get_api_params
-            self.all_recipients += emails
+            # In the recipient address, "email" is the addr spec to deliver to,
+            # and "header_to" is a fully-composed "To" header to display.
+            # (We use "header_to" rather than "name" to simplify some logic
+            # in _finalize_recipients; the results end up the same.)
+            self.data["recipients"].extend(
+                {"address": {
+                    "email": email.addr_spec,
+                    "header_to": email.address,
+                }}
+                for email in emails)
+            self.recipients += emails
 
     def set_cc(self, emails):
+        # https://www.sparkpost.com/docs/faq/cc-bcc-with-rest-api/
         if emails:
-            self.params['cc'] = [email.address for email in emails]
-            self.all_recipients += emails
+            # Add the Cc header, visible to all recipients:
+            cc_header = ", ".join(email.address for email in emails)
+            self.data["content"].setdefault("headers", {})["Cc"] = cc_header
+            # Actual recipients are added later, in _finalize_recipients
+            self.cc_and_bcc += emails
+            self.recipients += emails
 
     def set_bcc(self, emails):
         if emails:
-            self.params['bcc'] = [email.address for email in emails]
-            self.all_recipients += emails
+            # Actual recipients are added later, in _finalize_recipients
+            self.cc_and_bcc += emails
+            self.recipients += emails
 
     def set_subject(self, subject):
-        self.params['subject'] = subject
+        self.data["content"]["subject"] = subject
 
     def set_reply_to(self, emails):
         if emails:
-            # reply_to is only documented as a single email, but this seems to work:
-            self.params['reply_to'] = ', '.join([email.address for email in emails])
+            self.data["content"]["reply_to"] = ", ".join(email.address for email in emails)
 
     def set_extra_headers(self, headers):
         if headers:
-            self.params['custom_headers'] = dict(headers)  # convert CaseInsensitiveDict to plain dict for SP lib
+            self.data["content"].setdefault("headers", {}).update(headers)
 
     def set_text_body(self, body):
-        self.params['text'] = body
+        self.data["content"]["text"] = body
 
     def set_html_body(self, body):
-        if 'html' in self.params:
+        if "html" in self.data["content"]:
             # second html body could show up through multiple alternatives, or html body + alternative
             self.unsupported_feature("multiple html parts")
-        self.params['html'] = body
+        self.data["content"]["html"] = body
 
-    def add_attachment(self, attachment):
-        if attachment.inline:
-            param = 'inline_images'
-            name = attachment.cid
+    def add_alternative(self, content, mimetype):
+        if mimetype.lower() == "text/x-amp-html":
+            if "amp_html" in self.data["content"]:
+                self.unsupported_feature("multiple html parts")
+            self.data["content"]["amp_html"] = content
         else:
-            param = 'attachments'
-            name = attachment.name or ''
+            super().add_alternative(content, mimetype)
 
-        self.params.setdefault(param, []).append({
-            'type': attachment.mimetype,
-            'name': name,
-            'data': attachment.b64content})
+    def set_attachments(self, atts):
+        attachments = [{
+            "name": att.name or "",
+            "type": att.content_type,
+            "data": att.b64content,
+        } for att in atts if not att.inline]
+        if attachments:
+            self.data["content"]["attachments"] = attachments
+
+        inline_images = [{
+            "name": att.cid,
+            "type": att.mimetype,
+            "data": att.b64content,
+        } for att in atts if att.inline]
+        if inline_images:
+            self.data["content"]["inline_images"] = inline_images
 
     # Anymail-specific payload construction
     def set_envelope_sender(self, email):
-        self.params['return_path'] = email.addr_spec
+        self.data["return_path"] = email.addr_spec
 
     def set_metadata(self, metadata):
-        self.params['metadata'] = metadata
+        self.data["metadata"] = metadata
+
+    def set_merge_metadata(self, merge_metadata):
+        for recipient in self.data["recipients"]:
+            to_email = recipient["address"]["email"]
+            if to_email in merge_metadata:
+                recipient["metadata"] = merge_metadata[to_email]
 
     def set_send_at(self, send_at):
         try:
-            self.params['start_time'] = send_at.replace(microsecond=0).isoformat()
+            start_time = send_at.replace(microsecond=0).isoformat()
         except (AttributeError, TypeError):
-            self.params['start_time'] = send_at  # assume user already formatted
+            start_time = send_at  # assume user already formatted
+        self.data.setdefault("options", {})["start_time"] = start_time
 
     def set_tags(self, tags):
         if len(tags) > 0:
-            self.params['campaign'] = tags[0]
+            self.data["campaign_id"] = tags[0]
             if len(tags) > 1:
-                self.unsupported_feature('multiple tags (%r)' % tags)
+                self.unsupported_feature("multiple tags (%r)" % tags)
 
     def set_track_clicks(self, track_clicks):
-        self.params['track_clicks'] = track_clicks
+        self.data.setdefault("options", {})["click_tracking"] = track_clicks
 
     def set_track_opens(self, track_opens):
-        self.params['track_opens'] = track_opens
+        self.data.setdefault("options", {})["open_tracking"] = track_opens
 
     def set_template_id(self, template_id):
-        # 'template' transmissions.send param becomes 'template_id' in API json 'content'
-        self.params['template'] = template_id
+        self.data["content"]["template_id"] = template_id
+        # Must remove empty string "content" params when using stored template
+        for content_param in ["subject", "text", "html"]:
+            try:
+                if not self.data["content"][content_param]:
+                    del self.data["content"][content_param]
+            except KeyError:
+                pass
 
     def set_merge_data(self, merge_data):
-        self.merge_data = merge_data  # merged into params['recipients'] in get_api_params
-
-    def set_merge_metadata(self, merge_metadata):
-        self.merge_metadata = merge_metadata  # merged into params['recipients'] in get_api_params
+        for recipient in self.data["recipients"]:
+            to_email = recipient["address"]["email"]
+            if to_email in merge_data:
+                recipient["substitution_data"] = merge_data[to_email]
 
     def set_merge_global_data(self, merge_global_data):
-        self.params['substitution_data'] = merge_global_data
+        self.data["substitution_data"] = merge_global_data
 
     # ESP-specific payload construction
     def set_esp_extra(self, extra):
-        self.params.update(extra)
-
-
-class _FullSparkPostEndpoint(str):
-    """A string-like object that allows using a complete SparkPost API endpoint url as base_uri:
-
-        sp = SparkPost(api_key, base_uri=_FullSparkPostEndpoint('https://api.sparkpost.com/api/labs'))
-
-    Works around SparkPost.__init__ code `self.base_uri = base_uri + '/api/v' + version`,
-    which makes it difficult to simply copy and paste full API endpoints from SparkPost's docs
-    (https://developers.sparkpost.com/api/index.html#header-api-endpoints) -- and completely
-    prevents using the labs API endpoint (which has no "v" in it).
-
-    Should work with all python-sparkpost releases through at least v1.3.6.
-    """
-    _expect = ['/api/v', '1']  # ignore attempts to concatenate these with me (in order)
-
-    def __add__(self, other):
-        expected = self._expect[0]
-        self._expect = self._expect[1:]  # (makes a copy for this instance)
-        if other == expected:
-            # ignore this operation
-            if self._expect:
-                return self
-            else:
-                return str(self)  # my work is done; just be a normal str now
-        else:
-            # something changed in python-sparkpost; please open an Anymail issue to fix
-            raise ValueError(
-                "This version of Anymail is not compatible with this version of python-sparkpost.\n"
-                "(_FullSparkPostEndpoint(%r) expected %r but got %r)" % (self, expected, other))
+        update_deep(self.data, extra)
