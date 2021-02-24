@@ -33,8 +33,8 @@ vNext
 Fixes
 ~~~~~
 
-* **Postmark:** Fix Postmark API error when sending with a template that doesn't
-  require any merge data. (Thanks to `@Tobeyforce`_ for reporting it.)
+* **Postmark:** Fix two different errors when sending with a template but no merge
+  data. (Thanks to `@kareemcoding`_ and `@Tobeyforce`_ for reporting them.)
 
 
 v8.2
@@ -1226,6 +1226,7 @@ Features
 .. _@janneThoft: https://github.com/janneThoft
 .. _@jc-ee: https://github.com/jc-ee
 .. _@joshkersey: https://github.com/joshkersey
+.. _@kareemcoding: https://github.com/kareemcoding
 .. _@kika115: https://github.com/kika115
 .. _@Lekensteyn: https://github.com/Lekensteyn
 .. _@lewistaylor: https://github.com/lewistaylor

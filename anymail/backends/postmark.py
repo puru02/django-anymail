@@ -160,7 +160,7 @@ class PostmarkPayload(RequestsPayload):
         super().__init__(message, defaults, backend, headers=headers, *args, **kwargs)
 
     def get_api_endpoint(self):
-        batch_send = self.is_batch() and len(self.to_emails) > 1
+        batch_send = self.is_batch()
         if 'TemplateAlias' in self.data or 'TemplateId' in self.data or 'TemplateModel' in self.data:
             if batch_send:
                 return "email/batchWithTemplates"
@@ -187,8 +187,8 @@ class PostmarkPayload(RequestsPayload):
         elif api_endpoint == "email/batch":
             data = [self.data_for_recipient(to) for to in self.to_emails]
         elif api_endpoint == "email/withTemplate/":
-            assert len(self.to_emails) == 1
-            data = self.data_for_recipient(self.to_emails[0])
+            assert self.merge_data is None and self.merge_metadata is None  # else it's a batch send
+            data = self.data
         else:
             raise AssertionError("PostmarkPayload.serialize_data missing"
                                  " case for api_endpoint %r" % api_endpoint)

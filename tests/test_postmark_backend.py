@@ -398,6 +398,19 @@ class PostmarkBackendAnymailFeatureTests(PostmarkBackendMockAPITestCase):
         # Postmark requires TemplateModel (can be empty) with TemplateId/TemplateAlias
         self.assertEqual(data['TemplateModel'], {})
 
+    def test_template_multiple_recipients(self):
+        # This is a non-batch (no merge_data) template send
+        message = AnymailMessage(
+            from_email='from@example.com',
+            to=['to@example.com', "Also to <to2@example.com>"],
+            template_id=1234567,
+        )
+        message.send()
+        self.assert_esp_called('/email/withTemplate/')
+        data = self.get_api_call_json()
+        self.assertEqual(data['To'], 'to@example.com, Also to <to2@example.com>')
+        self.assertEqual(data['TemplateId'], 1234567)
+
     _mock_batch_response = json.dumps([{
             "ErrorCode": 0,
             "Message": "OK",
@@ -464,14 +477,17 @@ class PostmarkBackendAnymailFeatureTests(PostmarkBackendMockAPITestCase):
         )
         message.send()
 
-        self.assert_esp_called('/email/withTemplate/')
+        # because merge_data is set, it's treated as a batch send
+        self.assert_esp_called('/email/batchWithTemplates')
         data = self.get_api_call_json()
 
         self.assertEqual(data, {
-            "From": "from@example.com",
-            "To": "alice@example.com",
-            "TemplateId": 1234567,
-            "TemplateModel": {"name": "Alice", "group": "Developers", "site": "ExampleCo"},
+            'Messages': [{
+                "From": "from@example.com",
+                "To": "alice@example.com",
+                "TemplateId": 1234567,
+                "TemplateModel": {"name": "Alice", "group": "Developers", "site": "ExampleCo"},
+            }]
         })
 
         recipients = message.anymail_status.recipients
