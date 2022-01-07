@@ -1,0 +1,77 @@
+name: release
+
+# To release this package:
+# 1. Update the version number and changelog in the source.
+#    Commit and push (to branch main or a vX.Y patch branch),
+#    and wait for tests to complete.
+# 2. Tag with "vX.Y" or "vX.Y.Z": either create and push tag
+#    directly via git, or create and publish a GitHub release.
+#
+# This workflow will run in response to the new tag, and will:
+#    - Verify the source code and git tag version numbers match
+#    - Publish the package to PyPI
+#    - Create or update the release on GitHub
+
+on:
+  push:
+    tags: [ "v[0-9]*" ]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    environment: release
+    steps:
+      - name: Get code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Get version
+        # (This will end the workflow if git and source versions don't match.)
+        id: version
+        run: |
+          VERSION="$(python setup.py --version)"
+          TAG="v$VERSION"
+          GIT_TAG="$(git tag -l --points-at "$GITHUB_REF" 'v*')"
+          if [ "$GIT_TAG" != "$TAG" ]; then
+            echo "::error ::package version '$TAG' does not match git tag '$GIT_TAG'"
+            exit 1
+          fi
+          echo "::set-output name=version::$VERSION"
+          echo "::set-output name=tag::$TAG"
+          echo "::set-output name=anchor::${TAG//[^[:alnum:]]/-}"
+
+      - name: Install build requirements
+        run: |
+          pip install twine wheel
+      - name: Build
+        run: |
+          rm -rf build dist django_anymail.egg-info
+          python setup.py sdist bdist_wheel
+          twine check dist/*
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
+
+      - name: Release to GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          TITLE: ${{ steps.version.outputs.tag }}
+          NOTES: |
+            [Changelog](https://anymail.readthedocs.io/en/stable/changelog/#${{ steps.version.outputs.anchor }})
+        run: |
+          # gh release create-or-edit "$TAG" --target "$GITHUB_REF" --title "$TITLE" --notes "$NOTES" ./dist/*
+          # (gh release doesn't support edit - 6/2021)
+          # (hub requires separate --attach=FILE arg for each file)
+          FILES=(./dist/*)
+          if ! hub release edit --message "$TITLE" --message "$NOTES" "${FILES[@]/#/--attach=}" "$TAG"; then
+            hub release create -t "$GITHUB_SHA" --message "$TITLE" --message "$NOTES" "${FILES[@]/#/--attach=}" "$TAG"
+          fi
