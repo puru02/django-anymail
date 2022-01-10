@@ -426,6 +426,67 @@ class SpecialHeaderTests(TestBackendTestCase):
             self.message.send()
 
 
+class AlternativePartsTests(TestBackendTestCase):
+    """Anymail should handle alternative parts consistently with Django's SMTP backend"""
+
+    def test_default_usage(self):
+        """Body defaults to text/plain, use alternative for html"""
+        self.message.body = "plain body"
+        self.message.attach_alternative("html body", "text/html")
+        self.message.send()
+        params = self.get_send_params()
+        self.assertEqual(params['text_body'], "plain body")
+        self.assertEqual(params['html_body'], "html body")
+        self.assertNotIn('alternatives', params)
+
+    def test_content_subtype_html(self):
+        """Change body to text/html, use alternative for plain"""
+        self.message.content_subtype = "html"
+        self.message.body = "html body"
+        self.message.attach_alternative("plain body", "text/plain")
+        self.message.send()
+        params = self.get_send_params()
+        self.assertEqual(params['text_body'], "plain body")
+        self.assertEqual(params['html_body'], "html body")
+        self.assertNotIn('alternatives', params)
+
+    def test_attach_plain_and_html(self):
+        """Use alternatives for both bodies"""
+        message = AnymailMessage(subject="Subject", from_email="from@example.com", to=["to@example.com"])
+        message.attach_alternative("plain body", "text/plain")
+        message.attach_alternative("html body", "text/html")
+        message.send()
+        params = self.get_send_params()
+        self.assertEqual(params['text_body'], "plain body")
+        self.assertEqual(params['html_body'], "html body")
+        self.assertNotIn('alternatives', params)
+
+    def test_additional_plain_part(self):
+        """Two plaintext bodies"""
+        # In theory this is supported (e.g., for different languages or charsets),
+        # though MUAs are unlikely to display anything after the first.
+        self.message.body = "plain body"
+        self.message.attach_alternative("second plain body", "text/plain")
+        self.message.send()
+        params = self.get_send_params()
+        self.assertEqual(params['text_body'], "plain body")
+        self.assertEqual(params['alternatives'], [("second plain body", "text/plain")])
+
+    def test_exotic_content_subtype(self):
+        """Change body to text/calendar, use alternatives for plain and html"""
+        # This is unlikely to work with most ESPs, but we can try to communicate the intent...
+        # (You probably want an attachment rather than an alternative part.)
+        self.message.content_subtype = "calendar"
+        self.message.body = "BEGIN:VCALENDAR..."
+        self.message.attach_alternative("plain body", "text/plain")
+        self.message.attach_alternative("html body", "text/html")
+        self.message.send()
+        params = self.get_send_params()
+        self.assertEqual(params['text_body'], "plain body")
+        self.assertEqual(params['html_body'], "html body")
+        self.assertEqual(params['alternatives'], [("BEGIN:VCALENDAR...", "text/calendar")])
+
+
 class BatchSendDetectionTestCase(TestBackendTestCase):
     """Tests shared code to consistently determine whether to use batch send"""
 

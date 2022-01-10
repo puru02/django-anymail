@@ -107,7 +107,12 @@ class TestPayload(BasePayload):
         self.params['html_body'] = body
 
     def add_alternative(self, content, mimetype):
-        self.unsupported_feature("alternative part with type '%s'" % mimetype)
+        # For testing purposes, we allow all "text/*" alternatives,
+        # but not any other mimetypes.
+        if mimetype.startswith('text'):
+            self.params.setdefault('alternatives', []).append((content, mimetype))
+        else:
+            self.unsupported_feature("alternative part with type '%s'" % mimetype)
 
     def add_attachment(self, attachment):
         self.params.setdefault('attachments', []).append(attachment)

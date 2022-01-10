@@ -25,6 +25,20 @@ Release history
 ^^^^^^^^^^^^^^^
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
+vNext
+-----
+
+*Unreleased changes on main branch*
+
+Fixes
+~~~~~
+
+* Allow `attach_alternative("content", "text/plain")` in place of setting
+  an EmailMessage's `body`, and generally improve alternative part
+  handling for consistency with Django's SMTP EmailBackend.
+  (Thanks to `@cjsoftuk`_ for reporting the issue.)
+
+
 v8.4
 ----
 
@@ -1241,6 +1255,7 @@ Features
 .. _@anstosa: https://github.com/anstosa
 .. _@calvin: https://github.com/calvin
 .. _@chrisgrande: https://github.com/chrisgrande
+.. _@cjsoftuk: https://github.com/cjsoftuk
 .. _@costela: https://github.com/costela
 .. _@decibyte: https://github.com/decibyte
 .. _@dominik-lekse: https://github.com/dominik-lekse

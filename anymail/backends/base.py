@@ -281,9 +281,7 @@ class BasePayload:
                     else:
                         value = converter(value)
             if value is not UNSET:
-                if attr == 'body':
-                    setter = self.set_html_body if message.content_subtype == 'html' else self.set_text_body
-                elif attr == 'from_email':
+                if attr == 'from_email':
                     setter = self.set_from_email_list
                 elif attr == 'extra_headers':
                     setter = self.process_extra_headers
@@ -452,6 +450,18 @@ class BasePayload:
         # headers is a CaseInsensitiveDict, and is a copy (so is safe to modify)
         self.unsupported_feature('extra_headers')
 
+    def set_body(self, body):
+        # Interpret message.body depending on message.content_subtype.
+        # (Subclasses should generally implement set_text_body and set_html_body
+        # rather than overriding this.)
+        content_subtype = self.message.content_subtype
+        if content_subtype == "plain":
+            self.set_text_body(body)
+        elif content_subtype == "html":
+            self.set_html_body(body)
+        else:
+            self.add_alternative(body, "text/%s" % content_subtype)
+
     def set_text_body(self, body):
         raise NotImplementedError("%s.%s must implement set_text_body" %
                                   (self.__class__.__module__, self.__class__.__name__))
@@ -461,17 +471,28 @@ class BasePayload:
                                   (self.__class__.__module__, self.__class__.__name__))
 
     def set_alternatives(self, alternatives):
+        # Handle treating first text/{plain,html} alternatives as bodies.
+        # (Subclasses should generally implement add_alternative
+        # rather than overriding this.)
+        has_plain_body = self.message.content_subtype == "plain" and self.message.body
+        has_html_body = self.message.content_subtype == "html" and self.message.body
         for content, mimetype in alternatives:
-            if mimetype == "text/html":
-                # This assumes that there's at most one html alternative,
-                # and so it should be the html body. (Most ESPs don't
-                # support multiple html alternative parts anyway.)
+            if mimetype == "text/plain" and not has_plain_body:
+                self.set_text_body(content)
+                has_plain_body = True
+            elif mimetype == "text/html" and not has_html_body:
                 self.set_html_body(content)
+                has_html_body = True
             else:
                 self.add_alternative(content, mimetype)
 
     def add_alternative(self, content, mimetype):
-        self.unsupported_feature("alternative part with type '%s'" % mimetype)
+        if mimetype == "text/plain":
+            self.unsupported_feature("multiple plaintext parts")
+        elif mimetype == "text/html":
+            self.unsupported_feature("multiple html parts")
+        else:
+            self.unsupported_feature("alternative part with type '%s'" % mimetype)
 
     def set_attachments(self, attachments):
         for attachment in attachments:
