@@ -11,7 +11,7 @@ from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy
 
 from anymail.backends.test import EmailBackend as TestBackend, TestPayload
-from anymail.exceptions import AnymailConfigurationError, AnymailInvalidAddress, AnymailUnsupportedFeature
+from anymail.exceptions import AnymailConfigurationError, AnymailError, AnymailInvalidAddress, AnymailUnsupportedFeature
 from anymail.message import AnymailMessage
 from anymail.utils import get_anymail_setting
 
@@ -363,6 +363,24 @@ class CatchCommonErrorsTests(TestBackendTestCase):
                                       "Invalid email address 'Mail' parsed from 'Mail, Inc. <mail@example.com>'"
                                       " in `extra_headers['From']`. (Maybe missing quotes around a display-name?)"):
             self.message.send()
+
+    def test_error_minimizes_pii_leakage(self):
+        """
+        AnymailError messages should generally avoid including
+        email addresses where not relevant to the error.
+
+        (This is not a guarantee that exceptions will never include
+        email addresses or other PII. The ESP's own error--which *is*
+        deliberately included in the message--will often include the
+        email address, and Anymail makes no attempt to filter that.)
+        """
+        # Cause an error (not related to the specific email addresses involved):
+        self.message.attach_alternative("...", "audio/mpeg4")
+        with self.assertRaises(AnymailError) as cm:
+            self.message.send()
+        error = cm.exception
+        self.assertNotIn("from@example.com", str(error))
+        self.assertNotIn("to@example.com", str(error))
 
 
 def flatten_emails(emails):

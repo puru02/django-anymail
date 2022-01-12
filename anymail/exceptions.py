@@ -39,25 +39,9 @@ class AnymailError(Exception):
         parts = [
             " ".join([str(arg) for arg in self.args]),
             self.describe_cause(),
-            self.describe_send(),
             self.describe_response(),
         ]
         return "\n".join(filter(None, parts))
-
-    def describe_send(self):
-        """Return a string describing the ESP send in self.email_message, or None"""
-        if self.email_message is None:
-            return None
-        description = "Sending a message"
-        try:
-            description += " to %s" % ','.join(self.email_message.to)
-        except AttributeError:
-            pass
-        try:
-            description += " from %s" % self.email_message.from_email
-        except AttributeError:
-            pass
-        return description
 
     def describe_response(self):
         """Return a formatted string of self.status_code and response, or None"""

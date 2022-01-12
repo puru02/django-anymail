@@ -37,6 +37,13 @@ Fixes
   an EmailMessage's `body`, and generally improve alternative part
   handling for consistency with Django's SMTP EmailBackend.
   (Thanks to `@cjsoftuk`_ for reporting the issue.)
+* Remove "sending a message from *sender* to *recipient*" from `AnymailError`
+  text, as this can unintentionally leak personal information into logs.
+  [Note that `AnymailError` *does* still include any error description
+  from your ESP, and this often contains email addresses and other content
+  from the sent message. If this is a concern, you can adjust Django's logging
+  config to limit collection from Anymail or implement custom PII filtering.]
+  (Thanks to `@coupa-anya`_ for reporting the issue.)
 
 
 v8.4
@@ -1257,6 +1264,7 @@ Features
 .. _@chrisgrande: https://github.com/chrisgrande
 .. _@cjsoftuk: https://github.com/cjsoftuk
 .. _@costela: https://github.com/costela
+.. _@coupa-anya: https://github.com/coupa-anya
 .. _@decibyte: https://github.com/decibyte
 .. _@dominik-lekse: https://github.com/dominik-lekse
 .. _@ewingrj: https://github.com/ewingrj
