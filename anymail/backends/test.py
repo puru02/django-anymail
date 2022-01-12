@@ -39,7 +39,7 @@ class EmailBackend(AnymailBaseBackend):
 
     def post_to_esp(self, payload, message):
         # Keep track of the sent messages and params (for test cases)
-        message.anymail_test_params = payload.params
+        message.anymail_test_params = payload.get_params()
         mail.outbox.append(message)
         try:
             # Tests can supply their own message.test_response:
@@ -72,6 +72,12 @@ class TestPayload(BasePayload):
     def init_payload(self):
         self.params = {}
         self.recipient_emails = []
+
+    def get_params(self):
+        # Test backend callers can check message.anymail_test_params['is_batch_send']
+        # to verify whether Anymail thought the message should use batch send logic.
+        self.params['is_batch_send'] = self.is_batch()
+        return self.params
 
     def set_from_email(self, email):
         self.params['from'] = email

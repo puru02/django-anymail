@@ -46,6 +46,13 @@ Fixes
   (Thanks to `@coupa-anya`_ for reporting the issue.)
 
 
+Other
+~~~~~
+
+* In Anymail's test EmailBackend, add `is_batch_send` boolean to `anymail_test_params`
+  to help tests check whether a sent message would fall under Anymail's batch-send logic.
+
+
 v8.4
 ----
 

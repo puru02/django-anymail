@@ -9,7 +9,7 @@ by loading a dummy EmailBackend that accumulates messages
 in memory rather than sending them. That works just fine with Anymail.
 
 Anymail also includes its own "test" EmailBackend. This is intended primarily for
-Anymail's own internal tests, but you may find it useful for some of your test cases, too:
+Anymail's internal testing, but you may find it useful for some of your test cases, too:
 
 * Like Django's locmem EmailBackend, Anymail's test EmailBackend collects sent messages
   in :data:`django.core.mail.outbox`.
@@ -50,3 +50,12 @@ Here's an example:
 
             # Or verify the Anymail params, including any merged settings defaults:
             self.assertTrue(mail.outbox[0].anymail_test_params["track_clicks"])
+
+Note that :data:`django.core.mail.outbox` is an "outbox," not an attempt to represent end users'
+*inboxes*. When using Django's default locmem EmailBackend, each outbox item represents a single
+call to an SMTP server. With Anymail's test EmailBackend, each outbox item represents a single
+call to an ESP's send API. (Anymail does not try to simulate how an ESP might further process
+the message for that API call: Anymail can't render :ref:`esp-stored-templates`, and it keeps a
+:ref:`batch send<batch-send>` message as a single outbox item, representing the single ESP API call
+that will send multiple messages. You can check ``outbox[n].anymail_test_params['is_batch_send']``
+to see if a message would fall under Anymail's batch send logic.)

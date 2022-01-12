@@ -508,28 +508,28 @@ class AlternativePartsTests(TestBackendTestCase):
 class BatchSendDetectionTestCase(TestBackendTestCase):
     """Tests shared code to consistently determine whether to use batch send"""
 
-    def setUp(self):
-        super().setUp()
-        self.backend = TestBackend()
-
     def test_default_is_not_batch(self):
-        payload = self.backend.build_message_payload(self.message, {})
-        self.assertFalse(payload.is_batch())
+        self.message.send()
+        params = self.get_send_params()
+        self.assertFalse(params['is_batch_send'])
 
     def test_merge_data_implies_batch(self):
         self.message.merge_data = {}  # *anything* (even empty dict) implies batch
-        payload = self.backend.build_message_payload(self.message, {})
-        self.assertTrue(payload.is_batch())
+        self.message.send()
+        params = self.get_send_params()
+        self.assertTrue(params['is_batch_send'])
 
     def test_merge_metadata_implies_batch(self):
         self.message.merge_metadata = {}  # *anything* (even empty dict) implies batch
-        payload = self.backend.build_message_payload(self.message, {})
-        self.assertTrue(payload.is_batch())
+        self.message.send()
+        params = self.get_send_params()
+        self.assertTrue(params['is_batch_send'])
 
     def test_merge_global_data_does_not_imply_batch(self):
         self.message.merge_global_data = {}
-        payload = self.backend.build_message_payload(self.message, {})
-        self.assertFalse(payload.is_batch())
+        self.message.send()
+        params = self.get_send_params()
+        self.assertFalse(params['is_batch_send'])
 
     def test_cannot_call_is_batch_during_init(self):
         # It's tempting to try to warn about unsupported batch features in setters,
