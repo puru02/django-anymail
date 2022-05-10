@@ -15,7 +15,7 @@ from anymail.webhooks.mailgun import MailgunInboundWebhookView
 from .test_mailgun_webhooks import (
     TEST_WEBHOOK_SIGNING_KEY, mailgun_sign_payload,
     mailgun_sign_legacy_payload, querydict_to_postdict)
-from .utils import sample_image_content, sample_email_content
+from .utils import sample_image_content, sample_email_content, encode_multipart, make_fileobj
 from .webhook_cases import WebhookTestCase
 
 
@@ -104,6 +104,7 @@ class MailgunInboundTestCase(WebhookTestCase):
         att2.name = 'image.png'
         email_content = sample_email_content()
         att3 = BytesIO(email_content)
+        att3.name = '\\share\\mail\\forwarded.msg'
         att3.content_type = 'message/rfc822; charset="us-ascii"'
         raw_event = mailgun_sign_legacy_payload({
             'message-headers': '[]',
@@ -125,6 +126,7 @@ class MailgunInboundTestCase(WebhookTestCase):
         self.assertEqual(attachments[0].get_filename(), 'test.txt')
         self.assertEqual(attachments[0].get_content_type(), 'text/plain')
         self.assertEqual(attachments[0].get_content_text(), 'test attachment')
+        self.assertEqual(attachments[1].get_filename(), 'forwarded.msg')  # Django strips paths
         self.assertEqual(attachments[1].get_content_type(), 'message/rfc822')
         self.assertEqualIgnoringHeaderFolding(attachments[1].get_content_bytes(), email_content)
 
@@ -134,6 +136,68 @@ class MailgunInboundTestCase(WebhookTestCase):
         self.assertEqual(inline.get_filename(), 'image.png')
         self.assertEqual(inline.get_content_type(), 'image/png')
         self.assertEqual(inline.get_content_bytes(), image_content)
+
+    def test_filtered_attachment_filenames(self):
+        # Make sure the inbound webhook can deal with missing fields caused by
+        # Django's multipart/form-data filename filtering. (The attachments are lost,
+        # but shouldn't cause errors in the inbound webhook.)
+        filenames = [
+            "", "path\\", "path/"
+            ".", "path\\.", "path/.",
+            "..", "path\\..", "path/..",
+        ]
+        num_attachments = len(filenames)
+        payload = {
+            "attachment-%d" % (i+1): make_fileobj("content", filename=filenames[i], content_type="text/pdf")
+            for i in range(num_attachments)
+        }
+        payload.update({
+            'message-headers': '[]',
+            'attachment-count': str(num_attachments),
+        })
+
+        # Must do our own multipart/form-data encoding for empty filenames:
+        response = self.client.post('/anymail/mailgun/inbound/',
+                                    data=encode_multipart("BoUnDaRy", mailgun_sign_legacy_payload(payload)),
+                                    content_type="multipart/form-data; boundary=BoUnDaRy")
+        self.assertEqual(response.status_code, 200)
+        kwargs = self.assert_handler_called_once_with(self.inbound_handler, sender=MailgunInboundWebhookView,
+                                                      event=ANY, esp_name='Mailgun')
+
+        # Different Django releases strip different filename patterns.
+        # Just verify that at least some attachments got dropped (so the test is valid)
+        # without causing an error in the inbound webhook:
+        attachments = kwargs['event'].message.attachments
+        self.assertLess(len(attachments), num_attachments)
+
+    def test_unusual_content_id_map(self):
+        # Under unknown conditions, Mailgun appears to generate a content-id-map with multiple
+        # empty keys (and possibly other duplicate keys). We still want to correctly identify
+        # inline attachments from it.
+        raw_event = mailgun_sign_legacy_payload({
+            'message-headers': '[]',
+            'attachment-count': '4',
+            'content-id-map': '{"": "attachment-1", "": "attachment-2",'
+                              ' "<abc>": "attachment-3", "<abc>": "attachment-4"}',
+            'attachment-1': make_fileobj("att1"),
+            'attachment-2': make_fileobj("att2"),
+            'attachment-3': make_fileobj("att3"),
+            'attachment-4': make_fileobj("att4"),
+        })
+
+        response = self.client.post('/anymail/mailgun/inbound/', data=raw_event)
+        self.assertEqual(response.status_code, 200)
+        kwargs = self.assert_handler_called_once_with(self.inbound_handler, sender=MailgunInboundWebhookView,
+                                                      event=ANY, esp_name='Mailgun')
+        event = kwargs['event']
+        message = event.message
+        self.assertEqual(len(message.attachments), 0)  # all inlines
+        inlines = [part for part in message.walk() if part.is_inline_attachment()]
+        self.assertEqual(len(inlines), 4)
+        self.assertEqual(inlines[0]["Content-ID"], "")
+        self.assertEqual(inlines[1]["Content-ID"], "")
+        self.assertEqual(inlines[2]["Content-ID"], "<abc>")
+        self.assertEqual(inlines[3]["Content-ID"], "<abc>")
 
     def test_inbound_mime(self):
         # Mailgun provides the full, raw MIME message if the webhook url ends in 'mime'

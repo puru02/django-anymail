@@ -99,7 +99,7 @@ class AnymailInboundMessage(Message):
     def inline_attachments(self):
         """dict of Content-ID: attachment (as MIMEPart objects)"""
         return {unquote(part['Content-ID']): part for part in self.walk()
-                if part.is_inline_attachment() and part['Content-ID']}
+                if part.is_inline_attachment() and part['Content-ID'] is not None}
 
     def get_address_header(self, header):
         """Return the value of header parsed into a (possibly-empty) list of EmailAddress objects"""
@@ -299,11 +299,11 @@ class AnymailInboundMessage(Message):
         # some sort of lazy attachment where the content is only pulled in if/when
         # requested (and then use file.chunks() to minimize memory usage)
         return cls.construct_attachment(
-            content_type=file.content_type,
+            content_type=getattr(file, 'content_type', None),
             content=file.read(),
-            filename=file.name,
+            filename=getattr(file, 'name', None),
             content_id=content_id,
-            charset=file.charset)
+            charset=getattr(file, 'charset', None))
 
     @classmethod
     def construct_attachment(cls, content_type, content,

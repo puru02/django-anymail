@@ -395,17 +395,27 @@ class MailgunInboundWebhookView(MailgunBaseWebhookView):
         except (KeyError, TypeError):
             attachments = None
         else:
-            # Load attachments from posted files: Mailgun file field names are 1-based
-            att_ids = ['attachment-%d' % i for i in range(1, attachment_count+1)]
-            att_cids = {  # filename: content-id (invert content-id-map)
-                att_id: cid for cid, att_id
-                in json.loads(request.POST.get('content-id-map', '{}')).items()
-            }
-            attachments = [
-                AnymailInboundMessage.construct_attachment_from_uploaded_file(
-                    request.FILES[att_id], content_id=att_cids.get(att_id, None))
-                for att_id in att_ids
-            ]
+            # Load attachments from posted files: attachment-1, attachment-2, etc.
+            # content-id-map is {content-id: attachment-id}, identifying which files are inline attachments.
+            # Invert it to {attachment-id: content-id}, while handling potentially duplicate content-ids.
+            field_to_content_id = json.loads(
+                request.POST.get('content-id-map', '{}'),
+                object_pairs_hook=lambda pairs: {att_id: cid for (cid, att_id) in pairs})
+            attachments = []
+            for n in range(1, attachment_count+1):
+                attachment_id = "attachment-%d" % n
+                try:
+                    file = request.FILES[attachment_id]
+                except KeyError:
+                    # Django's multipart/form-data handling drops FILES with certain
+                    # filenames (for security) or with empty filenames (Django ticket 15879).
+                    # (To avoid this problem, use Mailgun's "raw MIME" inbound option.)
+                    pass
+                else:
+                    content_id = field_to_content_id.get(attachment_id)
+                    attachment = AnymailInboundMessage.construct_attachment_from_uploaded_file(
+                        file, content_id=content_id)
+                    attachments.append(attachment)
 
         return AnymailInboundMessage.construct(
             headers=json.loads(request.POST['message-headers']),  # includes From, To, Cc, Subject, etc.

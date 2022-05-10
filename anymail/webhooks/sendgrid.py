@@ -181,12 +181,22 @@ class SendGridInboundWebhookView(AnymailBaseWebhookView):
             attachments = None
         else:
             # Load attachments from posted files
-            attachments = [
-                AnymailInboundMessage.construct_attachment_from_uploaded_file(
-                    request.FILES[att_id],
-                    content_id=attachment_info[att_id].get("content-id", None))
-                for att_id in sorted(attachment_info.keys())
-            ]
+            attachments = []
+            for attachment_id in sorted(attachment_info.keys()):
+                try:
+                    file = request.FILES[attachment_id]
+                except KeyError:
+                    # Django's multipart/form-data handling drops FILES with certain
+                    # filenames (for security) or with empty filenames (Django ticket 15879).
+                    # (To avoid this problem, enable SendGrid's "raw, full MIME" inbound option.)
+                    pass
+                else:
+                    # (This deliberately ignores attachment_info[attachment_id]["filename"],
+                    # which has not passed through Django's filename sanitization.)
+                    content_id = attachment_info[attachment_id].get("content-id")
+                    attachment = AnymailInboundMessage.construct_attachment_from_uploaded_file(
+                        file, content_id=content_id)
+                    attachments.append(attachment)
 
         default_charset = request.POST.encoding.lower()  # (probably utf-8)
         text = request.POST.get('text')

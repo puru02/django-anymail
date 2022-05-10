@@ -428,17 +428,24 @@ The Destination URL setting will be:
      * *random:random* is an :setting:`ANYMAIL_WEBHOOK_SECRET` shared secret
      * *yoursite.example.com* is your Django site
 
-Be sure the URL has a trailing slash. (SendGrid's inbound processing won't follow Django's
+You should enable SendGrid's "POST the raw, full MIME message" checkbox (see note below).
+And be sure the URL has a trailing slash. (SendGrid's inbound processing won't follow Django's
 :setting:`APPEND_SLASH` redirect.)
 
 If you want to use Anymail's normalized :attr:`~anymail.inbound.AnymailInboundMessage.spam_detected` and
 :attr:`~anymail.inbound.AnymailInboundMessage.spam_score` attributes, be sure to enable the "Check
 incoming emails for spam" checkbox.
 
-In most cases, you should enable SendGrid's "POST the raw, full MIME message" checkbox.
-Anymail should work either way (and you can change the option at any time), but enabling
-raw MIME will give the most accurate representation of *any* received email (including
-complex forms like multi-message mailing list digests).
+.. note::
+
+    Anymail supports either option for SendGrid's "POST the raw, full MIME message" checkbox, but
+    enabling this setting is preferred to get the most accurate representation of any received email.
+    Using raw MIME also avoids a limitation in Django's :mimetype:`multipart/form-data` handling
+    that can strip attachments with certain filenames.
+
+    .. versionchanged:: vNext
+       Leaving SendGrid's "full MIME" checkbox disabled is no longer recommended.
+
 
 .. _Inbound Parse Webhook:
    https://sendgrid.com/docs/Classroom/Basics/Inbound_Parse_Webhook/setting_up_the_inbound_parse_webhook.html

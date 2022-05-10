@@ -5,12 +5,12 @@ import uuid
 import warnings
 from base64 import b64decode
 from contextlib import contextmanager
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from unittest import TestCase
 from unittest.util import safe_repr
 
-from django.test import Client
+import django.test.client
 
 
 def decode_att(att):
@@ -177,7 +177,7 @@ class AnymailTestMixin(TestCase):
             sys.stdout = old_stdout
 
 
-class ClientWithCsrfChecks(Client):
+class ClientWithCsrfChecks(django.test.Client):
     """Django test Client that enforces CSRF checks
 
     https://docs.djangoproject.com/en/stable/ref/csrf/#testing
@@ -227,3 +227,35 @@ def dedent_bytes(text):
     if margin:
         text = re.sub(b'(?m)^' + margin, b'', text)
     return text
+
+
+def make_fileobj(content, filename=None, content_type=None, encoding=None):
+    """
+    Returns a file-like object that can be used in Django test Client
+    post data to simulate an uploaded file.
+    """
+    # The logic that unpacks this is in django.test.client.encode_file.
+    if isinstance(content, str):
+        content = content.encode(encoding or 'utf-8')
+    fileobj = BytesIO(content)
+    if filename is not None:
+        fileobj.name = filename
+    if content_type is not None:
+        fileobj.content_type = content_type
+    return fileobj
+
+
+def encode_multipart(boundary, data):
+    """
+    Version of :func:`django.test.client.encode_multipart` that allows
+    empty filenames. (The original function substitutes the field's
+    name if a file has an empty name.)
+    """
+    # For simplicity, encode with the original function, and then
+    # replace any 'filename="<key>"' with 'filename=""'. This isn't
+    # entirely robust, but is sufficient for testing use.
+    encoded = django.test.client.encode_multipart(boundary, data)
+    re_keys = r"|".join(re.escape(key) for key in data.keys())
+    return re.sub(
+        rb'filename="(%s)"' % re_keys.encode("ascii"),
+        b'filename=""', encoded)

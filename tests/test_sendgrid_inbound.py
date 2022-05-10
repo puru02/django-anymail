@@ -9,7 +9,7 @@ from anymail.inbound import AnymailInboundMessage
 from anymail.signals import AnymailInboundEvent
 from anymail.webhooks.sendgrid import SendGridInboundWebhookView
 
-from .utils import dedent_bytes, sample_image_content, sample_email_content
+from .utils import dedent_bytes, sample_image_content, sample_email_content, encode_multipart, make_fileobj
 from .webhook_cases import WebhookTestCase
 
 
@@ -96,15 +96,16 @@ class SendgridInboundTestCase(WebhookTestCase):
         att2.name = 'image.png'
         email_content = sample_email_content()
         att3 = BytesIO(email_content)
+        att3.name = '\\share\\mail\\forwarded.msg'
         att3.content_type = 'message/rfc822; charset="us-ascii"'
         raw_event = {
             'headers': '',
             'attachments': '3',
             'attachment-info': json.dumps({
-                "attachment3": {"filename": "", "name": "", "charset": "US-ASCII", "type": "message/rfc822"},
-                "attachment2": {"filename": "image.png", "name": "image.png", "type": "image/png",
-                                "content-id": "abc123"},
-                "attachment1": {"filename": "test.txt", "name": "test.txt", "type": "text/plain"},
+                "attachment3": {"filename": "\\share\\mail\\forwarded.msg",
+                                "charset": "US-ASCII", "type": "message/rfc822"},
+                "attachment2": {"filename": "image.png", "type": "image/png", "content-id": "abc123"},
+                "attachment1": {"filename": "test.txt", "charset": "UTF-8", "type": "text/plain"},
             }),
             'content-ids': '{"abc123": "attachment2"}',
             'attachment1': att1,
@@ -123,6 +124,7 @@ class SendgridInboundTestCase(WebhookTestCase):
         self.assertEqual(attachments[0].get_filename(), 'test.txt')
         self.assertEqual(attachments[0].get_content_type(), 'text/plain')
         self.assertEqual(attachments[0].get_content_text(), 'test attachment')
+        self.assertEqual(attachments[1].get_filename(), 'forwarded.msg')  # Django strips path
         self.assertEqual(attachments[1].get_content_type(), 'message/rfc822')
         self.assertEqualIgnoringHeaderFolding(attachments[1].get_content_bytes(), email_content)
 
@@ -132,6 +134,45 @@ class SendgridInboundTestCase(WebhookTestCase):
         self.assertEqual(inline.get_filename(), 'image.png')
         self.assertEqual(inline.get_content_type(), 'image/png')
         self.assertEqual(inline.get_content_bytes(), image_content)
+
+    def test_filtered_attachment_filenames(self):
+        # Make sure the inbound webhook can deal with missing fields caused by
+        # Django's multipart/form-data filename filtering. (The attachments are lost,
+        # but shouldn't cause errors in the inbound webhook.)
+        filenames = [
+            "", "path\\", "path/"
+            ".", "path\\.", "path/.",
+            "..", "path\\..", "path/..",
+        ]
+        num_attachments = len(filenames)
+        payload = {
+            "attachment%d" % (i+1): make_fileobj("content", filename=filenames[i], content_type="text/pdf")
+            for i in range(num_attachments)
+        }
+        attachment_info = {
+            key: {"filename": value.name, "type": "text/pdf"}
+            for key, value in payload.items()
+        }
+        payload.update({
+            'headers': '',
+            'attachments': str(num_attachments),
+            'attachment-info': json.dumps(attachment_info),
+        })
+
+        # Must do our own form-data encoding to properly test empty attachment filenames.
+        # Must do our own multipart/form-data encoding for empty filenames:
+        response = self.client.post('/anymail/sendgrid/inbound/',
+                                    data=encode_multipart("BoUnDaRy", payload),
+                                    content_type="multipart/form-data; boundary=BoUnDaRy")
+        self.assertEqual(response.status_code, 200)
+        kwargs = self.assert_handler_called_once_with(self.inbound_handler, sender=SendGridInboundWebhookView,
+                                                      event=ANY, esp_name='SendGrid')
+
+        # Different Django releases strip different filename patterns.
+        # Just verify that at least some attachments got dropped (so the test is valid)
+        # without causing an error in the inbound webhook:
+        attachments = kwargs['event'].message.attachments
+        self.assertLess(len(attachments), num_attachments)
 
     def test_inbound_mime(self):
         # SendGrid has an option to send the full, raw MIME message

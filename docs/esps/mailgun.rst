@@ -490,25 +490,22 @@ Inbound webhook
 ---------------
 
 If you want to receive email from Mailgun through Anymail's normalized :ref:`inbound <inbound>`
-handling, follow Mailgun's `Receiving, Storing and Fowarding Messages`_ guide to set up
-an inbound route that forwards to Anymail's inbound webhook. (You can configure routes
-using Mailgun's API, or simply using the `Mailgun receiving config`_.)
+handling, follow Mailgun's `Receiving, Forwarding and Storing Messages`_ guide to set up
+an inbound route that forwards to Anymail's inbound webhook. Create an inbound route
+in Mailgun's dashboard on the `Email Receiving panel`_, or use Mailgun's API.
 
-The *action* for your route will be either:
+Use this url as the route's "forward" destination:
 
-   :samp:`forward("https://{random}:{random}@{yoursite.example.com}/anymail/mailgun/inbound/")`
-   :samp:`forward("https://{random}:{random}@{yoursite.example.com}/anymail/mailgun/inbound_mime/")`
+   :samp:`https://{random}:{random}@{yoursite.example.com}/anymail/mailgun/inbound_mime/`
 
-     * *forward* is required to select Mailgun's "forward" action
-       (Anymail does not support using the "store" action)
      * *random:random* is an :setting:`ANYMAIL_WEBHOOK_SECRET` shared secret
      * *yoursite.example.com* is your Django site
+     * :samp:`mime` at the end tells Mailgun to supply the entire message in "raw MIME" format
+       (see note below)
 
-Anymail accepts either of Mailgun's "fully-parsed" (.../inbound/) and "raw MIME" (.../inbound_mime/)
-formats; the URL tells Mailgun which you want. Because Anymail handles parsing and normalizing the data,
-both are equally easy to use. The raw MIME option will give the most accurate representation of *any*
-received email (including complex forms like multi-message mailing list digests). The fully-parsed option
-*may* use less memory while processing messages with many large attachments.
+You must use Mailgun's "forward" route action; Anymail does not currently support "store and notify."
+(For debugging, you might find it helpful to *also* enable the "store" route action to keep a copy
+of inbound messages on Mailgun's servers, but Anymail's inbound webhook won't work as a store-notify url.)
 
 If you want to use Anymail's normalized :attr:`~anymail.inbound.AnymailInboundMessage.spam_detected` and
 :attr:`~anymail.inbound.AnymailInboundMessage.spam_score` attributes, you'll need to set your Mailgun
@@ -519,11 +516,24 @@ Anymail will verify Mailgun inbound message events using your
 :setting:`MAILGUN_WEBHOOK_SIGNING_KEY <ANYMAIL_MAILGUN_WEBHOOK_SIGNING_KEY>`
 Anymail setting. By default, Mailgun's webhook signature provides similar security
 to Anymail's shared webhook secret, so it's acceptable to omit the
-:setting:`ANYMAIL_WEBHOOK_SECRET` setting (and "random:random@" portion of the
-action) with Mailgun inbound routing.
+:setting:`ANYMAIL_WEBHOOK_SECRET` setting (and :samp:`{random:random}@` portion of the
+forwarding url) with Mailgun inbound routing.
+
+.. note::
+
+    Anymail also supports Mailgun's "fully-parsed" inbound message format, but the "raw MIME"
+    version is preferred to get the most accurate representation of any received email.
+    Using raw MIME also avoids a limitation in Django's :mimetype:`multipart/form-data` handling
+    that can strip attachments with certain filenames (and inline images without filenames).
+
+    To use Mailgun's fully-parsed format, change :samp:`.../inbound_mime/` to just
+    :samp:`.../inbound/` at the end of the route forwarding url.
+
+    .. versionchanged:: vNext
+       Using Mailgun's full-parsed (not raw MIME) inbound message format is no longer recommended.
 
 
-.. _Receiving, Storing and Fowarding Messages:
+.. _Receiving, Forwarding and Storing Messages:
    https://documentation.mailgun.com/en/latest/user_manual.html#receiving-forwarding-and-storing-messages
-.. _Mailgun receiving config: https://app.mailgun.com/app/receiving/routes
+.. _Email Receiving panel: https://app.mailgun.com/app/receiving/routes
 .. _Mailgun domains config: https://app.mailgun.com/app/sending/domains

@@ -30,6 +30,23 @@ vNext
 
 *Unreleased changes in main branch*
 
+Fixes
+~~~~~
+
+* **Mailgun and SendGrid inbound:** Work around a Django limitation that
+  drops attachments with certain filenames. The missing attachments
+  are now simply omitted from the resulting inbound message. (In earlier
+  releases, they would cause a MultiValueDictKeyError in Anymail's
+  inbound webhook.)
+
+  Anymail documentation now recommends using Mailgun's and SendGrid's "raw MIME"
+  inbound options, which avoid the problem and preserve all attachments.
+
+  See `Mailgun inbound <https://anymail.readthedocs.io/en/latest/esps/mailgun/#mailgun-inbound>`__
+  and `SendGrid inbound <https://anymail.readthedocs.io/en/latest/esps/sendgrid/#sendgrid-inbound>`__
+  for details. (Thanks to `@erikdrums`_ for reporting and helping investigate the problem.)
+
+
 Other
 ~~~~~
 
@@ -1299,6 +1316,7 @@ Features
 .. _@coupa-anya: https://github.com/coupa-anya
 .. _@decibyte: https://github.com/decibyte
 .. _@dominik-lekse: https://github.com/dominik-lekse
+.. _@erikdrums: https://github.com/erikdrums
 .. _@ewingrj: https://github.com/ewingrj
 .. _@fdemmer: https://github.com/fdemmer
 .. _@Flexonze: https://github.com/Flexonze
