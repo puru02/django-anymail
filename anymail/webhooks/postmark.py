@@ -34,6 +34,7 @@ class PostmarkTrackingWebhookView(PostmarkBaseWebhookView):
         'Delivery': EventType.DELIVERED,
         'Open': EventType.OPENED,
         'SpamComplaint': EventType.COMPLAINED,
+        'SubscriptionChange': EventType.UNSUBSCRIBED,
         'Inbound': EventType.INBOUND,  # future, probably
     }
 
@@ -61,6 +62,7 @@ class PostmarkTrackingWebhookView(PostmarkBaseWebhookView):
         'InboundError': (EventType.INBOUND_FAILED, None),
         'DMARCPolicy': (EventType.REJECTED, RejectReason.BLOCKED),
         'TemplateRenderingFailed': (EventType.FAILED, None),
+        'ManualSuppression': (EventType.REJECTED, None),
     }
 
     def esp_to_anymail_event(self, esp_event):
@@ -87,6 +89,16 @@ class PostmarkTrackingWebhookView(PostmarkBaseWebhookView):
                 event_type, reject_reason = self.event_types[esp_event['Type']]
             except KeyError:
                 pass
+        if event_type == EventType.UNSUBSCRIBED:
+            if esp_event['SuppressSending']:
+                # Postmark doesn't provide a way to distinguish between
+                # explicit unsubscribes and bounces
+                try:
+                    event_type, reject_reason = self.event_types[esp_event['SuppressionReason']]
+                except KeyError:
+                    pass
+            else:
+                event_type, reject_reason = self.event_types['Subscribe']
 
         recipient = getfirst(esp_event, ['Email', 'Recipient'], None)  # Email for bounce; Recipient for open
 
