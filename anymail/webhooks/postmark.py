@@ -62,7 +62,7 @@ class PostmarkTrackingWebhookView(PostmarkBaseWebhookView):
         'InboundError': (EventType.INBOUND_FAILED, None),
         'DMARCPolicy': (EventType.REJECTED, RejectReason.BLOCKED),
         'TemplateRenderingFailed': (EventType.FAILED, None),
-        'ManualSuppression': (EventType.REJECTED, None),
+        'ManualSuppression': (EventType.UNSUBSCRIBED, RejectReason.UNSUBSCRIBED),
     }
 
     def esp_to_anymail_event(self, esp_event):
@@ -103,7 +103,7 @@ class PostmarkTrackingWebhookView(PostmarkBaseWebhookView):
         recipient = getfirst(esp_event, ['Email', 'Recipient'], None)  # Email for bounce; Recipient for open
 
         try:
-            timestr = getfirst(esp_event, ['DeliveredAt', 'BouncedAt', 'ReceivedAt'])
+            timestr = getfirst(esp_event, ['DeliveredAt', 'BouncedAt', 'ReceivedAt', 'ChangedAt'])
         except KeyError:
             timestamp = None
         else:

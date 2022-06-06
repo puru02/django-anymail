@@ -220,3 +220,96 @@ class PostmarkDeliveryTestCase(WebhookTestCase):
         with self.assertRaisesMessage(AnymailConfigurationError, errmsg):
             self.client.post('/anymail/postmark/tracking/', content_type='application/json',
                              data=json.dumps({"RecordType": "Inbound"}))
+
+    def test_unsubscribe(self):
+        raw_event = {
+            "RecordType": "SubscriptionChange",
+            "MessageID": "a4909a96-73d7-4c49-b148-a54522d3f7ac",
+            "ServerID": 23,
+            "MessageStream": "outbound",
+            "ChangedAt": "2022-06-05T17:17:32Z",
+            "Recipient": "john@example.com",
+            "Origin": "Recipient",
+            "SuppressSending": True,
+            "SuppressionReason": "ManualSuppression",
+            "Tag": "welcome-email",
+            "Metadata": {
+                "example": "value",
+                "example_2": "value"
+            }
+        }
+        response = self.client.post('/anymail/postmark/tracking/',
+                                    content_type='application/json', data=json.dumps(raw_event))
+        self.assertEqual(response.status_code, 200)
+        kwargs = self.assert_handler_called_once_with(self.tracking_handler, sender=PostmarkTrackingWebhookView,
+                                                      event=ANY, esp_name='Postmark')
+        event = kwargs['event']
+        self.assertIsInstance(event, AnymailTrackingEvent)
+        self.assertEqual(event.event_type, "unsubscribed")
+        self.assertEqual(event.esp_event, raw_event)
+        self.assertEqual(event.timestamp, datetime(2022, 6, 5, 17, 17, 32, tzinfo=utc))
+        self.assertEqual(event.message_id, "a4909a96-73d7-4c49-b148-a54522d3f7ac")
+        self.assertEqual(event.recipient, "john@example.com",)
+        self.assertEqual(event.reject_reason, "unsubscribed")
+
+    def test_resubscribe(self):
+        raw_event = {
+            "RecordType": "SubscriptionChange",
+            "MessageID": "a4909a96-73d7-4c49-b148-a54522d3f7ac",
+            "ServerID": 23,
+            "MessageStream": "outbound",
+            "ChangedAt": "2022-06-05T17:17:32Z",
+            "Recipient": "john@example.com",
+            "Origin": "Recipient",
+            "SuppressSending": False,
+            "SuppressionReason": None,
+            "Tag": "welcome-email",
+            "Metadata": {
+                "example": "value",
+                "example_2": "value"
+            }
+        }
+        response = self.client.post('/anymail/postmark/tracking/',
+                                    content_type='application/json', data=json.dumps(raw_event))
+        self.assertEqual(response.status_code, 200)
+        kwargs = self.assert_handler_called_once_with(self.tracking_handler, sender=PostmarkTrackingWebhookView,
+                                                      event=ANY, esp_name='Postmark')
+        event = kwargs['event']
+        self.assertIsInstance(event, AnymailTrackingEvent)
+        self.assertEqual(event.event_type, "subscribed")
+        self.assertEqual(event.esp_event, raw_event)
+        self.assertEqual(event.timestamp, datetime(2022, 6, 5, 17, 17, 32, tzinfo=utc))
+        self.assertEqual(event.message_id, "a4909a96-73d7-4c49-b148-a54522d3f7ac")
+        self.assertEqual(event.recipient, "john@example.com",)
+        self.assertEqual(event.reject_reason, None)
+
+    def test_subscription_change_bounce(self):
+        raw_event = {
+            "RecordType": "SubscriptionChange",
+            "MessageID": "b4cb783d-78ed-43f2-983b-63f55c712dc8",
+            "ServerID": 23,
+            "MessageStream": "outbound",
+            "ChangedAt": "2022-06-05T17:17:32Z",
+            "Recipient": "john@example.com",
+            "Origin": "Recipient",
+            "SuppressSending": True,
+            "SuppressionReason": "HardBounce",
+            "Tag": "my-tag",
+            "Metadata": {
+                "example": "value",
+                "example_2": "value"
+            }
+        }
+        response = self.client.post('/anymail/postmark/tracking/',
+                                    content_type='application/json', data=json.dumps(raw_event))
+        self.assertEqual(response.status_code, 200)
+        kwargs = self.assert_handler_called_once_with(self.tracking_handler, sender=PostmarkTrackingWebhookView,
+                                                      event=ANY, esp_name='Postmark')
+        event = kwargs['event']
+        self.assertIsInstance(event, AnymailTrackingEvent)
+        self.assertEqual(event.event_type, "bounced")
+        self.assertEqual(event.esp_event, raw_event)
+        self.assertEqual(event.timestamp, datetime(2022, 6, 5, 17, 17, 32,  tzinfo=utc))
+        self.assertEqual(event.message_id, "b4cb783d-78ed-43f2-983b-63f55c712dc8")
+        self.assertEqual(event.recipient, "john@example.com",)
+        self.assertEqual(event.reject_reason, "bounced")
