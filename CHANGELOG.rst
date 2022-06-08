@@ -25,6 +25,19 @@ Release history
 ^^^^^^^^^^^^^^^
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
+vNext
+-----
+
+*Unreleased changes*
+
+Fixes
+~~~~~
+
+* **Postmark:** Handle Postmark's SubscriptionChange events as Anymail
+  unsubscribe, subscribe, or bounce tracking events, rather than "unknown".
+  (Thanks to `@puru02`_ for the fix.)
+
+
 v8.6 LTS
 --------
 
@@ -1344,6 +1357,7 @@ Features
 .. _@mbk-ok: https://github.com/mbk-ok
 .. _@mwheels: https://github.com/mwheels
 .. _@nuschk: https://github.com/nuschk
+.. _@puru02: https://github.com/puru02
 .. _@RignonNoel: https://github.com/RignonNoel
 .. _@sebashwa: https://github.com/sebashwa
 .. _@sebbacon: https://github.com/sebbacon
