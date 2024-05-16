@@ -3,7 +3,6 @@ from base64 import b64encode
 from email.utils import collapse_rfc2231_value
 from textwrap import dedent
 
-from django.core.mail import SafeMIMEText
 from django.test import SimpleTestCase
 
 from anymail.exceptions import AnymailDeprecationWarning
@@ -245,7 +244,17 @@ class AnymailInboundMessageConstructionTests(SimpleTestCase):
         # (This might be a Django bug; plain old MIMEText avoids the problem by using
         # 'Content-Transfer-Encoding: base64', which parses fine as text or bytes.)
         # Either way, AnymailInboundMessage should try to sidestep the whole issue.
-        raw = SafeMIMEText("Unicode ✓", "plain", "utf-8").as_string()
+        # (This test might no longer be relevant--this might have been a corner case
+        # in Django's SafeMIME code in Python 2.7 only.)
+        raw = dedent(
+            # django.core.mail.message.SafeMIMEText("Unicode ✓", "plain", "utf-8").as_string()
+            """\
+            Content-Type: text/plain; charset="utf-8"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 8bit
+
+            Unicode ✓"""
+        )
         msg = AnymailInboundMessage.parse_raw_mime(raw)
         self.assertEqual(msg.text, "Unicode ✓")  # *not* "Unicode \\u2713"
 
