@@ -103,8 +103,7 @@ class EmailBackend(AnymailBaseBackend):
             client_send_api = getattr(self.client, payload.api_name)
         except AttributeError:
             raise NotImplementedError(
-                f"boto3 sesv2 client does not have method {payload.api_name!r}."
-                f" Check {payload.__class__.__name__}.api_name."
+                f"{self.client!r} does not have method {payload.api_name!r}."
             ) from None
         try:
             response = client_send_api(**payload.params)
