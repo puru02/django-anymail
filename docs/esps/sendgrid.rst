@@ -15,7 +15,7 @@ Anymail integrates with the `SendGrid`_ email service, using their `Web API v3`_
     to succeed, and reports these errors as drop events.
 
 .. _SendGrid: https://sendgrid.com/
-.. _Web API v3: https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/index.html
+.. _Web API v3: https://www.twilio.com/docs/sendgrid/api-reference
 .. _activity feed: https://app.sendgrid.com/email_activity?events=drops
 
 
@@ -160,7 +160,7 @@ messages.)
 
 
 .. _v3 Mail Send API:
-    https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/index.html#-Request-Body-Parameters
+    https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send#request-body
 
 
 
@@ -300,7 +300,7 @@ duplicated for *every* to-recipient.)
 See the `SendGrid's transactional template overview`_ for more information.
 
 .. _SendGrid's transactional template overview:
-    https://sendgrid.com/docs/ui/sending-email/create-and-edit-transactional-templates/
+    https://www.twilio.com/docs/sendgrid/ui/sending-email/how-to-send-an-email-with-dynamic-templates
 
 
 .. _sendgrid-legacy-templates:
@@ -396,12 +396,12 @@ queued, rejected, bounced, deferred, delivered, opened, clicked, complained, uns
 subscribed.
 
 The event's :attr:`~anymail.signals.AnymailTrackingEvent.esp_event` field will be
-a `dict` of `Sendgrid event`_ fields, for a single event. (Although SendGrid calls
+a `dict` of `SendGrid event`_ fields, for a single event. (Although SendGrid calls
 webhooks with batches of events, Anymail will invoke your signal receiver separately
 for each event in the batch.)
 
 .. _SendGrid mail settings: https://app.sendgrid.com/settings/mail_settings
-.. _Sendgrid event: https://sendgrid.com/docs/API_Reference/Webhooks/event.html
+.. _SendGrid event: https://www.twilio.com/docs/sendgrid/for-developers/tracking-events/event#delivery-events
 
 
 .. _sendgrid-inbound:
@@ -440,4 +440,4 @@ incoming emails for spam" checkbox.
 
 
 .. _Inbound Parse Webhook:
-   https://sendgrid.com/docs/Classroom/Basics/Inbound_Parse_Webhook/setting_up_the_inbound_parse_webhook.html
+   https://www.twilio.com/docs/sendgrid/for-developers/parsing-email/setting-up-the-inbound-parse-webhook
