@@ -55,6 +55,9 @@ Features
   and ``tags`` when sending with a ``template_id``.
   (Requires boto3 v1.34.98 or later.)
 
+* **MailerSend:** Allow all extra headers. (Note that MailerSend limits use
+  of this feature to "Enterprise accounts only.")
+
 Fixes
 ~~~~~
 

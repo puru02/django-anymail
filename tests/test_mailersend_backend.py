@@ -153,31 +153,21 @@ class MailerSendBackendStandardEmailTests(MailerSendBackendMockAPITestCase):
             headers={
                 "Reply-To": "another@example.com",
                 "In-Reply-To": "12345@example.com",
-                "X-MyHeader": "my value",
-                "Message-ID": "mycustommsgid@example.com",
                 "Precedence": "Bulk",
-            },
-        )
-        with self.assertRaisesMessage(AnymailUnsupportedFeature, "extra_headers"):
-            email.send()
-
-    def test_supported_custom_headers(self):
-        email = mail.EmailMessage(
-            "Subject",
-            "Body goes here",
-            "from@example.com",
-            ["to1@example.com"],
-            headers={
-                "Reply-To": "another@example.com",
-                "In-Reply-To": "12345@example.com",
-                "Precedence": "Bulk",
+                # Other custom headers only available to enterprise accounts:
+                "X-Custom": "custom header",
             },
         )
         email.send()
         data = self.get_api_call_json()
+        # Special handling headers:
         self.assertEqual(data["reply_to"], {"email": "another@example.com"})
         self.assertEqual(data["in_reply_to"], "12345@example.com")
         self.assertIs(data["precedence_bulk"], True)
+        # Other headers:
+        self.assertEqual(
+            data["headers"], [{"name": "X-Custom", "value": "custom header"}]
+        )
 
     def test_html_message(self):
         text_content = "This is an important message."
@@ -607,6 +597,7 @@ class MailerSendBackendAnymailFeatureTests(MailerSendBackendMockAPITestCase):
         self.assertNotIn("reply_to", data)
         self.assertNotIn("html", data)
         self.assertNotIn("attachments", data)
+        self.assertNotIn("headers", data)
         self.assertNotIn("template_id", data)
         self.assertNotIn("tags", data)
         self.assertNotIn("variables", data)

@@ -242,8 +242,8 @@ class MailerSendPayload(RequestsPayload):
             self.data["reply_to"] = self.make_mailersend_email(emails[0])
 
     def set_extra_headers(self, headers):
-        # MailerSend doesn't support arbitrary email headers, but has
-        # individual API params for In-Reply-To and Precedence: bulk.
+        # MailerSend has individual API params for In-Reply-To and Precedence: bulk.
+        # The general "headers" option "is available to Enterprise accounts only".
         # (headers is a CaseInsensitiveDict, and is a copy so safe to modify.)
         in_reply_to = headers.pop("In-Reply-To", None)
         if in_reply_to is not None:
@@ -256,7 +256,9 @@ class MailerSendPayload(RequestsPayload):
             self.data["precedence_bulk"] = is_bulk
 
         if headers:
-            self.unsupported_feature("most extra_headers (see docs)")
+            self.data["headers"] = [
+                {"name": field, "value": value} for field, value in headers.items()
+            ]
 
     def set_text_body(self, body):
         self.data["text"] = body

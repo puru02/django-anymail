@@ -204,7 +204,12 @@ see :ref:`unsupported-features`.
   Anymail will use only the first one.
 
 **Limited extra headers**
-  MailerSend does not allow most extra headers. There are two exceptions:
+  MailerSend allows extra email headers for "Enterprise accounts only."
+  If you try to send :ref:`extra headers <message-headers>` with a non-enterprise
+  account, you may receive an API error.
+
+  However, MailerSend has special handling for two headers,
+  and *any* MailerSend account can send messages with them:
 
   * You can include :mailheader:`In-Reply-To` in extra headers, set to
     a message-id (without the angle brackets).
@@ -216,8 +221,11 @@ see :ref:`unsupported-features`.
     if your extra headers have :mailheader:`Precedence` set to ``"bulk"`` or
     ``"list"`` or ``"junk"``, or ``false`` for any other value.
 
-  Any other extra headers will raise an
-  :exc:`~anymail.exceptions.AnymailUnsupportedFeature` error.
+  .. versionchanged:: 11.0
+
+      In earlier releases, attempting to send other headers
+      (even with an enterprise account) would raise an
+      :exc:`~anymail.exceptions.AnymailUnsupportedFeature` error.
 
 **No merge headers support**
   MailerSend's API does not provide a way to support Anymail's

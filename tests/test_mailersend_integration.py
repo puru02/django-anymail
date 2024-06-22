@@ -81,8 +81,13 @@ class MailerSendBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
             bcc=["test+bcc1@anymail.dev", "Blind Copy 2 <test+bcc2@anymail.dev>"],
             # MailerSend only supports single reply_to:
             reply_to=["Reply <reply@example.com>"],
-            # MailerSend supports very limited extra headers:
-            headers={"Precedence": "bulk", "In-Reply-To": "earlier-id@anymail.dev"},
+            headers={
+                # Special handling for these headers (available to all accounts):
+                "Precedence": "bulk",
+                "In-Reply-To": "earlier-id@anymail.dev",
+                # Only "enterprise accounts" can send other custom headers:
+                "X-Custom": "anymail test",
+            },
             send_at=send_at,
             tags=["tag 1", "tag 2"],
             track_clicks=False,
