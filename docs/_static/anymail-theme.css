@@ -17,6 +17,19 @@ table.sticky-left th:first-of-type[colspan] > p {
   left: 17px; /* (.wy-table $table-padding-size) + (docutils border="1" in html) */
 }
 
+/* Fix footnote stacking in sticky table */
+.rst-content .citation-reference,
+.rst-content .footnote-reference {
+  /* Original (but `position: relative` creates a new stacking context):
+  vertical-align: baseline;
+  position: relative;
+  top: -.4em;
+  */
+  vertical-align: 0.4em;
+  position: static;
+  top: initial; /* (not relevant with `position: static`) */
+}
+
 /* Show code cross-reference links as clickable $link-color (blue).
 
    Sphinx-rtd-theme usually wants `.rst-content a code` to be $link-color [1], but has

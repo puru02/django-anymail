@@ -48,7 +48,13 @@ The table below summarizes the Anymail features supported for each ESP.
     :widths: auto
     :class: sticky-left
 
-\* See ESP detail page for limitations and clarifications
+.. [#caveats]
+    Some restrictions apply---see the ESP detail page
+    (usually under "Limitations and Quirks").
+
+.. [#nocontrol]
+    The ESP supports tracking, but Anymail can't enable/disable it
+    for individual messages. See the ESP detail page for more information.
 
 Trying to choose an ESP? Please **don't** start with this table. It's far more
 important to consider things like an ESP's deliverability stats, latency, uptime,
