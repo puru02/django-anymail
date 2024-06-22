@@ -153,6 +153,7 @@ class SparkPostBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
                 "order": "12345",
             },
         )
+        message.from_email = None  # from_email must come from stored template
         message.send()
         recipient_status = message.anymail_status.recipients
         self.assertEqual(

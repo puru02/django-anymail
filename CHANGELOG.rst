@@ -41,6 +41,10 @@ Breaking changes
   (Anymail 10.0 switched to the SES v2 API by default. If your ``EMAIL_BACKEND``
   setting has ``amazon_sesv2``, change that to just ``amazon_ses``.)
 
+* **SparkPost:** When sending with a ``template_id``, Anymail now raises an
+  error if the message uses features that SparkPost will silently ignore. See
+  `docs <https://anymail.dev/en/latest/esps/sparkpost/#sparkpost-template-limitations>`__.
+
 Features
 ~~~~~~~~
 
@@ -162,7 +166,7 @@ Features
   should be no impact on your code. (Thanks to `@sblondon`_.)
 
 * **Brevo (Sendinblue):** Add support for inbound email. (See
-  `docs <https://anymail.dev/en/stable/esps/sendinblue/#sendinblue-inbound>`_.)
+  `docs <https://anymail.dev/en/stable/esps/sendinblue/#sendinblue-inbound>`__.)
 
 * **SendGrid:** Support multiple ``reply_to`` addresses.
   (Thanks to `@gdvalderrama`_ for pointing out the new API.)

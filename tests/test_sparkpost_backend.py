@@ -19,7 +19,7 @@ from anymail.exceptions import (
     AnymailSerializationError,
     AnymailUnsupportedFeature,
 )
-from anymail.message import attach_inline_image_file
+from anymail.message import AnymailMessage, attach_inline_image_file
 
 from .mock_requests_backend import RequestsBackendMockAPITestCase
 from .utils import (
@@ -510,9 +510,8 @@ class SparkPostBackendAnymailFeatureTests(SparkPostBackendMockAPITestCase):
         self.assertEqual(data["options"]["click_tracking"], True)
 
     def test_template_id(self):
-        message = mail.EmailMultiAlternatives(
-            from_email="from@example.com", to=["to@example.com"]
-        )
+        message = mail.EmailMultiAlternatives(to=["to@example.com"])
+        message.from_email = None
         message.template_id = "welcome_template"
         message.send()
         data = self.get_api_call_json()
@@ -521,6 +520,34 @@ class SparkPostBackendAnymailFeatureTests(SparkPostBackendMockAPITestCase):
         self.assertNotIn("subject", data["content"])
         self.assertNotIn("text", data["content"])
         self.assertNotIn("html", data["content"])
+        self.assertNotIn("from", data["content"])
+
+    def test_template_id_ignores_default_from_email(self):
+        # No from_email, or from_email=None in constructor,
+        # uses settings.DEFAULT_FROM_EMAIL. We strip that with a template_id:
+        message = AnymailMessage(to=["to@example.com"], template_id="welcome_template")
+        self.assertIsNotNone(message.from_email)  # because it's DEFAULT_FROM_EMAIL
+        message.send()
+        data = self.get_api_call_json()
+        self.assertNotIn("from", data["content"])
+
+    def test_unsupported_content_with_template_id(self):
+        # Make sure we raise an error for options that SparkPost
+        # silently ignores when sending with a template_id
+        message = AnymailMessage(
+            to=["to@example.com"],
+            from_email="non-default-from@example.com",
+            reply_to=["reply@example.com"],
+            headers={"X-Custom": "header"},
+            template_id="welcome_template",
+        )
+        message.attach(filename="test.txt", content="attachment", mimetype="text/plain")
+        with self.assertRaisesMessage(
+            AnymailUnsupportedFeature,
+            "template_id with attachments, extra headers and/or cc recipients,"
+            " from_email, reply_to",
+        ):
+            message.send()
 
     def test_merge_data(self):
         self.set_mock_result(accepted=4)  # two 'to' plus one 'cc' for each 'to'

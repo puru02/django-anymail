@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.utils.encoding import force_str
+
 from ..exceptions import AnymailRequestsAPIError
 from ..message import AnymailRecipientStatus
 from ..utils import get_anymail_setting, update_deep
@@ -86,6 +89,7 @@ class SparkPostPayload(RequestsPayload):
 
     def serialize_data(self):
         self._finalize_recipients()
+        self._check_content_options()
         return self.serialize_json(self.data)
 
     def _finalize_recipients(self):
@@ -126,6 +130,31 @@ class SparkPostPayload(RequestsPayload):
                 for email in self.cc_and_bcc
             )
 
+    # SparkPost silently ignores certain "content" payload fields
+    # when a template_id is used.
+    IGNORED_WITH_TEMPLATE_ID = {
+        # SparkPost API content.<field> -> feature name (for error message)
+        "attachments": "attachments",
+        "inline_images": "inline images",
+        "headers": "extra headers and/or cc recipients",
+        "from": "from_email",
+        "reply_to": "reply_to",
+    }
+
+    def _check_content_options(self):
+        if "template_id" in self.data["content"]:
+            # subject, text, and html will cause 422 API Error:
+            #     "message": "Both content object and template_id are specified",
+            #     "code": "1301"
+            # but others are silently ignored in a template send:
+            ignored = [
+                feature_name
+                for field, feature_name in self.IGNORED_WITH_TEMPLATE_ID.items()
+                if field in self.data["content"]
+            ]
+            if ignored:
+                self.unsupported_feature("template_id with %s" % ", ".join(ignored))
+
     #
     # Payload construction
     #
@@ -138,7 +167,8 @@ class SparkPostPayload(RequestsPayload):
         }
 
     def set_from_email(self, email):
-        self.data["content"]["from"] = email.address
+        if email:
+            self.data["content"]["from"] = email.address
 
     def set_to(self, emails):
         if emails:
@@ -293,13 +323,22 @@ class SparkPostPayload(RequestsPayload):
 
     def set_template_id(self, template_id):
         self.data["content"]["template_id"] = template_id
-        # Must remove empty string "content" params when using stored template
+        # Must remove empty string "content" params when using stored template.
+        # (Non-empty params are left in place, to cause API error.)
         for content_param in ["subject", "text", "html"]:
             try:
                 if not self.data["content"][content_param]:
                     del self.data["content"][content_param]
             except KeyError:
                 pass
+        # "from" is also silently ignored. Strip it if empty or DEFAULT_FROM_EMAIL,
+        # else leave in place to cause error in _check_content_options.
+        try:
+            from_email = self.data["content"]["from"]
+            if not from_email or from_email == force_str(settings.DEFAULT_FROM_EMAIL):
+                del self.data["content"]["from"]
+        except KeyError:
+            pass
 
     def set_merge_data(self, merge_data):
         for recipient in self.data["recipients"]:
