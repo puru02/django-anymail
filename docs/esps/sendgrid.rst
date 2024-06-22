@@ -3,7 +3,7 @@
 SendGrid
 ========
 
-Anymail integrates with the `SendGrid`_ email service, using their `Web API v3`_.
+Anymail integrates with the Twilio `SendGrid`_ email service, using their `Web API v3`_.
 
 .. important::
 

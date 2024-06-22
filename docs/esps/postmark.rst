@@ -3,7 +3,7 @@
 Postmark
 ========
 
-Anymail integrates with the `Postmark`_ transactional email service,
+Anymail integrates with the ActiveCampaign `Postmark`_ transactional email service,
 using their `HTTP email API`_.
 
 .. sidebar:: Alternatives

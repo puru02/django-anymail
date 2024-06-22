@@ -3,7 +3,7 @@
 Mailgun
 =======
 
-Anymail integrates with the `Mailgun <https://mailgun.com>`_
+Anymail integrates with the Sinch `Mailgun <https://mailgun.com>`_
 transactional email service, using their `messages REST API`_.
 
 .. note::

@@ -29,14 +29,14 @@ Anymail currently supports these ESPs:
 * **Amazon SES**
 * **Brevo** (formerly SendinBlue)
 * **MailerSend**
-* **Mailgun**
+* **Mailgun** (Sinch transactional email)
 * **Mailjet**
-* **Mandrill** (MailChimp transactional)
+* **Mandrill** (MailChimp transactional email)
 * **Postal** (self-hosted ESP)
-* **Postmark**
+* **Postmark** (ActiveCampaign transactional email)
 * **Resend**
-* **SendGrid**
-* **SparkPost**
+* **SendGrid** (Twilio transactional email)
+* **SparkPost** (Bird transactional email)
 * **Unisender Go**
 
 Anymail includes:

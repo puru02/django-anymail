@@ -3,7 +3,7 @@
 SparkPost
 =========
 
-Anymail integrates with the `SparkPost`_ email service, using their
+Anymail integrates with the Bird `SparkPost`_ email service, using their
 `Transmissions API`_.
 
 .. versionchanged:: 8.0
