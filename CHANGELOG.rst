@@ -65,6 +65,10 @@ Features
 Fixes
 ~~~~~
 
+* **Amazon SES:** Fix a bug that could result in sending a broken address header
+  if it had a long display name containing both non-ASCII characters and commas.
+  (Thanks to `@andresmrm`_ for isolating and reporting the issue.)
+
 * **SendGrid:** In the tracking webhook, correctly report "bounced address"
   (recipients dropped due to earlier bounces) as reject reason ``"bounced"``.
   (Thanks to `@vitaliyf`_.)
@@ -1639,6 +1643,7 @@ Features
 
 .. _@ailionx: https://github.com/ailionx
 .. _@alee: https://github.com/alee
+.. _@andresmrm: https://github.com/andresmrm
 .. _@anstosa: https://github.com/anstosa
 .. _@Arondit: https://github.com/Arondit
 .. _@b0d0nne11: https://github.com/b0d0nne11

@@ -165,13 +165,10 @@ class AmazonSESV2SendEmailPayload(AmazonSESBasePayload):
         Serialize self.mime_message as an RFC-5322/-2045 MIME message,
         encoded as 7bit-clean, us-ascii byte data.
         """
-        # Amazon SES does not support `Content-Transfer-Encoding: 8bit`. And using 8bit
-        # with SES open or click tracking results in mis-encoded characters. To avoid
-        # this, convert any 8bit parts to 7bit quoted printable or base64. (We own
-        # self.mime_message, so destructively modifying it should be OK.)
-        # (You might think cte_type="7bit" in the email.policy below would cover this,
-        # but it seems that cte_type is only examined as the MIME parts are constructed,
-        # not when an email.generator serializes them.)
+        # Amazon SES discourages `Content-Transfer-Encoding: 8bit`. And using
+        # 8bit with SES open or click tracking results in mis-encoded characters.
+        # To avoid this, convert any 8bit parts to 7bit quoted printable or base64.
+        # (We own self.mime_message, so destructively modifying it should be OK.)
         for part in self.mime_message.walk():
             if part["Content-Transfer-Encoding"] == "8bit":
                 del part["Content-Transfer-Encoding"]
@@ -181,7 +178,8 @@ class AmazonSESV2SendEmailPayload(AmazonSESBasePayload):
                 else:
                     email.encoders.encode_base64(part)
 
-        self.mime_message.policy = email.policy.default.clone(cte_type="7bit")
+        # (All message and part headers should already be 7bit clean,
+        # so there's no need to try to override email.policy here.)
         return self.mime_message.as_bytes()
 
     def parse_recipient_status(self, response):

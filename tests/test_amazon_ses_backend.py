@@ -318,6 +318,17 @@ class AmazonSESBackendStandardEmailTests(AmazonSESBackendMockAPITestCase):
         sent_message = self.get_sent_message()
         self.assertEqual(sent_message["Subject"], self.message.subject)
 
+    def test_broken_address_header(self):
+        # https://github.com/anymail/django-anymail/issues/369
+        self.message.to = ['"Người nhận a very very long, name" <to@example.com>']
+        self.message.cc = [
+            '"A véry long name with non-ASCII char and, comma" <cc@example.com>'
+        ]
+        self.message.send()
+        sent_message = self.get_sent_message()
+        self.assertEqual(sent_message["To"], self.message.to[0])
+        self.assertEqual(sent_message["Cc"], self.message.cc[0])
+
     def test_no_cte_8bit(self):
         """Anymail works around an Amazon SES bug that can corrupt non-ASCII bodies."""
         # (see detailed comments in the backend code)
@@ -333,12 +344,14 @@ class AmazonSESBackendStandardEmailTests(AmazonSESBackendMockAPITestCase):
         self.message.attach(att)
 
         self.message.send()
-        sent_message = self.get_sent_message()
+        raw_mime = self.get_send_params()["Content"]["Raw"]["Data"]
+        self.assertTrue(raw_mime.isascii())  # 7-bit clean
 
         # Make sure none of the resulting parts use `Content-Transfer-Encoding: 8bit`.
         # (Technically, either quoted-printable or base64 would be OK, but base64 text
         # parts have a reputation for triggering spam filters, so just require
         # quoted-printable for them.)
+        sent_message = self.get_sent_message()
         part_encodings = [
             (part.get_content_type(), part["Content-Transfer-Encoding"])
             for part in sent_message.walk()
@@ -354,6 +367,21 @@ class AmazonSESBackendStandardEmailTests(AmazonSESBackendMockAPITestCase):
                 ("application/data", "base64"),
             ],
         )
+
+    def test_no_cte_8bit_root(self):
+        # Same test as above, but with a non-multipart message using 8bit at root
+        self.message.body = "Это text body"
+        self.message.send()
+
+        raw_mime = self.get_send_params()["Content"]["Raw"]["Data"]
+        self.assertTrue(raw_mime.isascii())  # 7-bit clean
+
+        sent_message = self.get_sent_message()
+        part_encodings = [
+            (part.get_content_type(), part["Content-Transfer-Encoding"])
+            for part in sent_message.walk()
+        ]
+        self.assertEqual(part_encodings, [("text/plain", "quoted-printable")])
 
     def test_api_failure(self):
         error_response = {
