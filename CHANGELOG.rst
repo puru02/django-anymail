@@ -26,10 +26,10 @@ Release history
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
 
-vNext
+v11.0
 -----
 
-*Unreleased changes*
+*2024-06-23*
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -37,13 +37,13 @@ Breaking changes
 * **Amazon SES:** Drop support for the Amazon SES v1 API.
   If your ``EMAIL_BACKEND`` setting uses ``amazon_sesv1``,
   or if you are upgrading from Anymail 9.x or earlier directly to 11.0 or later, see
-  `Migrating to the SES v2 API <https://anymail.dev/en/latest/esps/amazon_ses/#amazon-ses-v2>`__.
+  `Migrating to the SES v2 API <https://anymail.dev/en/stable/esps/amazon_ses/#amazon-ses-v2>`__.
   (Anymail 10.0 switched to the SES v2 API by default. If your ``EMAIL_BACKEND``
   setting has ``amazon_sesv2``, change that to just ``amazon_ses``.)
 
 * **SparkPost:** When sending with a ``template_id``, Anymail now raises an
   error if the message uses features that SparkPost will silently ignore. See
-  `docs <https://anymail.dev/en/latest/esps/sparkpost/#sparkpost-template-limitations>`__.
+  `docs <https://anymail.dev/en/stable/esps/sparkpost/#sparkpost-template-limitations>`__.
 
 Features
 ~~~~~~~~
@@ -51,7 +51,7 @@ Features
 * Add new ``merge_headers`` option for per-recipient headers with batch sends.
   This can be helpful to send individual *List-Unsubscribe* headers (for example).
   Supported for all current ESPs *except* MailerSend, Mandrill and Postal. See
-  `docs <https://anymail.dev/en/latest/sending/anymail_additions/#anymail.message.AnymailMessage.merge_headers>`__.
+  `docs <https://anymail.dev/en/stable/sending/anymail_additions/#anymail.message.AnymailMessage.merge_headers>`__.
   (Thanks to `@carrerasrodrigo`_ for the idea, and for the base and
   Amazon SES implementations.)
 
