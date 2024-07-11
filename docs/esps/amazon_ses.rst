@@ -693,8 +693,8 @@ Anymail requires IAM permissions that will allow it to use these actions:
 
 * To send mail:
 
-  * Ordinary (non-templated) sends: ``ses:SendEmail``
-  * Template/merge sends: ``ses:SendBulkEmail``
+  * Ordinary (non-templated) sends: ``ses:SendEmail`` and ``ses:SendRawEmail``
+  * Template/merge sends: ``ses:SendBulkEmail`` and ``ses:SendBulkTemplatedEmail``
 
 * To :ref:`automatically confirm <amazon-ses-confirm-sns-subscriptions>`
   webhook SNS subscriptions: ``sns:ConfirmSubscription``
@@ -717,7 +717,12 @@ This IAM policy covers all of those:
           "Version": "2012-10-17",
           "Statement": [{
             "Effect": "Allow",
-            "Action": ["ses:SendEmail", "ses:SendBulkEmail"],
+            "Action": [
+              "ses:SendEmail",
+              "ses:SendRawEmail",
+              "ses:SendBulkEmail",
+              "ses:SendBulkTemplatedEmail"
+            ],
             "Resource": "*"
           }, {
             "Effect": "Allow",
@@ -730,35 +735,41 @@ This IAM policy covers all of those:
           }]
         }
 
-(Anymail does not need access to ``ses:SendRawEmail``
-or ``ses:SendBulkTemplatedEmail``. Those are SES v1 actions.)
-
 
 .. _amazon-ses-iam-errors:
 
-.. note:: **Misleading IAM error messages**
+.. note:: **Confusing IAM error messages**
 
-    Permissions errors for the SES v2 API often refer to the equivalent SES v1 API name,
-    which can be confusing. For example, this error (emphasis added):
+    Permissions errors for the SES v2 API refer to both the v2 API "operation"
+    and the underlying action whose permission is being checked. This can be
+    confusing. For example, this error (emphasis added):
 
     .. parsed-literal::
 
         An error occurred (AccessDeniedException) when calling the **SendEmail** operation:
         User 'arn:...' is not authorized to perform **'ses:SendRawEmail'** on resource 'arn:...'
 
-    actually indicates problems with IAM policies for the v2 ``ses:SendEmail`` action,
-    *not* the v1 ``ses:SendRawEmail`` action. (The correct action appears as the "operation"
-    in the first line of the error message.)
+    actually indicates problems with IAM policies for the ``ses:SendRawEmail``
+    *action*, not the ``ses:SendEmail`` action. (Even though Anymail calls
+    the SES v2 SendEmail API, not SendRawEmail.)
 
 Following the principle of `least privilege`_, you should omit permissions
 for any features you aren't using, and you may want to add additional restrictions:
 
 * For Amazon SES sending, you can add conditions to restrict senders, recipients, times,
   or other properties. See Amazon's `Controlling access to Amazon SES`_ guide.
-  (Be aware that the SES v2 ``SendBulkEmail`` API does not support condition keys
-  that restrict email addresses, and using them can cause misleading error messages.
-  All other SES APIs used by Anymail *do* support address restrictions, including
-  the SES v2 ``SendEmail`` API used for non-template sends.)
+  But be aware that:
+
+  * The v2 ``ses:SendBulkEmail`` action does not support condition keys that
+    restrict email addresses, and using them can cause misleading error messages.
+    To restrict template sends, apply condition keys to ``ses:SendBulkTemplatedEmail``
+    and then add a separate statement to allow ``ses:SendBulkEmail`` without conditions.
+  * The v2 ``ses:SendRawEmail`` and ``ses:SendEmail`` actions used for non-template
+    sends *do* support conditions to restrict addresses.
+  * Technically, the v2 ``ses:SendEmail`` *action* does not seem to be required
+    for the SES v2 SendEmail *API operation* as Anymail uses it (with the Content.Raw
+    param), but including it seems prudent given Amazon's confusing error messages
+    and incomplete documentation on the subject.
 
 * For auto-confirming webhooks, you might limit the resource to SNS topics owned
   by your AWS account, and/or specific topic names or patterns. E.g.,
@@ -810,12 +821,10 @@ for status tracking webhooks or receiving inbound email.)
 Migrating to SES v2 requires minimal code changes:
 
 1.  Update your :ref:`IAM permissions <amazon-ses-iam-permissions>` to grant Anymail
-    access to the SES v2 sending actions: ``ses:SendEmail`` for ordinary sends, and/or
-    ``ses:SendBulkEmail`` to send using SES templates. (The IAM action
-    prefix is just ``ses`` for both the v1 and v2 APIs.)
-
-    Access to ``ses:SendRawEmail`` or ``ses:SendBulkTemplatedEmail`` can be removed.
-    (Those actions are only needed for SES v1.)
+    access to the SES v2 sending actions: ``ses:SendEmail`` *and* ``ses:SendRawEmail``
+    for ordinary sends, and/or ``ses:SendBulkEmail`` *and* ``ses:SendBulkTemplatedEmail``
+    to send using SES templates. (The IAM action prefix is just ``ses`` for both
+    the v1 and v2 APIs.)
 
     If you run into unexpected IAM authorization failures, see the note about
     :ref:`misleading IAM permissions errors <amazon-ses-iam-errors>` above.

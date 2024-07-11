@@ -26,6 +26,23 @@ Release history
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
 
+v11.0.1
+-------
+
+*2024-07-11*
+
+(This release updates only documentation and package metadata; the code is
+identical to v11.0.)
+
+Fixes
+~~~~~
+
+* **Amazon SES (docs):** Correct IAM policies required for using
+  the Amazon SES v2 API. See
+  `Migrating to the SES v2 API <https://anymail.dev/en/stable/esps/amazon_ses/#amazon-ses-v2>`__.
+  (Thanks to `@scur-iolus`_ for identifying the problem.)
+
+
 v11.0
 -----
 
@@ -1681,6 +1698,7 @@ Features
 .. _@puru02: https://github.com/puru02
 .. _@RignonNoel: https://github.com/RignonNoel
 .. _@sblondon: https://github.com/sblondon
+.. _@scur-iolus: https://github.com/scur-iolus
 .. _@sdarwin: https://github.com/sdarwin
 .. _@sebashwa: https://github.com/sebashwa
 .. _@sebbacon: https://github.com/sebbacon
