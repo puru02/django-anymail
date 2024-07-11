@@ -2,6 +2,6 @@
 # Instead, load version info from the package root.
 
 #: major.minor or major.minor.patch (optionally with .devN suffix)
-__version__ = "11.0"
+__version__ = "11.0.1"
 
 VERSION = __version__.split(",")
