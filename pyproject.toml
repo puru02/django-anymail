@@ -12,19 +12,26 @@ authors = [
     {name = "Anymail Contributors"},
 ]
 description = """\
-    Django email backends and webhooks for Amazon SES, Brevo (Sendinblue),
-    MailerSend, Mailgun, Mailjet, Mandrill, Postal, Postmark, Resend,
-    SendGrid, SparkPost and Unisender Go\
-    """
+Django email backends and webhooks for Amazon SES, Brevo,
+ MailerSend, Mailgun, Mailjet, Mandrill, Postal, Postmark, Resend,
+ SendGrid, SparkPost and Unisender Go
+ (EmailBackend, transactional email tracking and inbound email signals)\
+"""
 # readme: see tool.hatch.metadata.hooks.custom below
 keywords = [
-    "Django", "email", "email backend",
-    "ESP", "transactional mail",
-    "Amazon SES", "Brevo",
-    "MailerSend", "Mailgun", "Mailjet", "Mandrill",
-    "Postal", "Postmark",
+    "Django", "email", "email backend", "EmailBackend",
+    "ESP", "email service provider", "transactional mail",
+    "email tracking", "inbound email", "webhook",
+    "Amazon SES", "AWS SES", "Simple Email Service",
+    "Brevo", "SendinBlue",
+    "MailerSend",
+    "Mailgun", "Mailjet", "Sinch",
+    "Mandrill", "MailChimp",
+    "Postal",
+    "Postmark", "ActiveCampaign",
     "Resend",
-    "SendGrid", "SendinBlue", "SparkPost",
+    "SendGrid", "Twilio",
+    "SparkPost", "Bird",
     "Unisender Go",
 ]
 classifiers = [

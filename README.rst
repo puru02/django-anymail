@@ -30,7 +30,7 @@ Anymail currently supports these ESPs:
 * **Brevo** (formerly SendinBlue)
 * **MailerSend**
 * **Mailgun** (Sinch transactional email)
-* **Mailjet**
+* **Mailjet** (Sinch transactional email)
 * **Mandrill** (MailChimp transactional email)
 * **Postal** (self-hosted ESP)
 * **Postmark** (ActiveCampaign transactional email)
