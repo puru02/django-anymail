@@ -16,7 +16,7 @@ def make_key():
     """Generate RSA public key with short key size, for testing only"""
     private_key = rsa.generate_private_key(
         public_exponent=65537,
-        key_size=512,
+        key_size=1024,
     )
     return private_key
 
