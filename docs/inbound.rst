@@ -242,6 +242,10 @@ Normalized inbound message
         A `list` of all attachments to the message, or an empty list if there are
         no attachments. See :ref:`inbound-attachments` below a description of the values.
 
+        Note that inline images (which appear intermixed with a message's body text)
+        are generally not included in :attr:`!attachments`. Use :attr:`inlines`
+        to access inline images.
+
         If the inbound message includes an attached message, :attr:`!attachments`
         will include the attached message and all of *its* attachments, recursively.
         Consider Python's :meth:`~email.message.EmailMessage.iter_attachments` as an
@@ -249,8 +253,9 @@ Normalized inbound message
 
     .. attribute:: inlines
 
-        A `list` of all inline content parts in the message, or an empty list if none.
-        See :ref:`inbound-attachments` below for a description of the values.
+        A `list` of all inline images (or other inline content) in the message,
+        or an empty list if none. See :ref:`inbound-attachments` below for
+        a description of the values.
 
         Like :attr:`attachments`, this will recursively descend into any attached messages.
 
