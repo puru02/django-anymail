@@ -556,16 +556,19 @@ forwarding url) with Mailgun inbound routing.
 
 .. note::
 
-    Anymail also supports Mailgun's "fully-parsed" inbound message format, but the "raw MIME"
-    version is preferred to get the most accurate representation of any received email.
-    Using raw MIME also avoids a limitation in Django's :mimetype:`multipart/form-data` handling
-    that can strip attachments with certain filenames (and inline images without filenames).
+    Anymail supports both of Mailgun's "fully-parsed" and "raw MIME" inbound
+    message formats. The raw MIME version is preferred to get the most accurate
+    representation of any received email. Using raw MIME also avoids a limitation
+    in Django's :mimetype:`multipart/form-data` handling that can strip attachments
+    with certain filenames (and inline images without filenames).
 
-    To use Mailgun's fully-parsed format, change :samp:`.../inbound_mime/` to just
-    :samp:`.../inbound/` at the end of the route forwarding url.
+    * To use raw MIME (recommended), the route forwarding url should end with
+      :samp:`…/inbound_mime/` as shown above.
+    * To use fully-parsed format (not recommended), omit the :samp:`_mime` so
+      the route forwarding url ends with just :samp:`…/inbound/`.
 
     .. versionchanged:: 8.6
-       Using Mailgun's full-parsed (not raw MIME) inbound message format is no longer recommended.
+       Using Mailgun's fully-parsed inbound message format is no longer recommended.
 
 
 .. _Receiving, Forwarding and Storing Messages:
