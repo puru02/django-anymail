@@ -26,6 +26,17 @@ Release history
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
 
+vNext (12.0)
+------------
+
+*unreleased changes*
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* Require **Django 4.0 or later** and Python 3.8 or later.
+
+
 v11.1
 -----
 

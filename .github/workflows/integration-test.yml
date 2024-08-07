@@ -29,6 +29,7 @@ jobs:
 
   test:
     name: ${{ matrix.config.tox }} ${{ matrix.config.options }}
+    # Ubuntu 22.04 runner includes Python 3.10
     runs-on: ubuntu-22.04
     needs: skip_duplicate_runs
     if: needs.skip_duplicate_runs.outputs.should_skip != 'true'
