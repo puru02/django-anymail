@@ -26,16 +26,26 @@ Release history
     ..  This extra heading level keeps the ToC from becoming unmanageably long
 
 
-vNext
+v11.1
 -----
 
-*unreleased changes*
+*2024-08-07*
 
 Features
 ~~~~~~~~
 
 * **Brevo:** Support Brevo's new "Complaint," "Error" and "Loaded by proxy"
   tracking events. (Thanks to `@originell`_ for the update.)
+
+Deprecations
+~~~~~~~~~~~~
+
+* This will be the last Anymail release to support Django 3.0, 3.1 and 3.2
+  (which reached end of extended support on 2021-04-06, 2021-12-07 and
+  2024-04-01, respectively).
+
+* This will be the last Anymail release to support Python 3.7 (which reached
+  end-of-life on 2023-06-27, and is not supported by Django 4.0 or later).
 
 
 v11.0.1
