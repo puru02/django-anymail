@@ -13,7 +13,7 @@ class InlineImageTests(AnymailTestMixin, SimpleTestCase):
         self.message = EmailMultiAlternatives()
         super().setUp()
 
-    @patch("email.utils.socket.getfqdn")
+    @patch("socket.getfqdn")
     def test_default_domain(self, mock_getfqdn):
         """The default Content-ID domain should *not* use local hostname"""
         # (This avoids problems with ESPs that re-use Content-ID as attachment
