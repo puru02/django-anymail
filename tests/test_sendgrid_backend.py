@@ -904,7 +904,7 @@ class SendGridBackendAnymailFeatureTests(SendGridBackendMockAPITestCase):
         self.message.template_id = "d-5a963add2ec84305813ff860db277d7a"
         self.message.merge_data = {
             "alice@example.com": {"name": "Alice", "group": "Developers"},
-            "bob@example.com": {"name": "Bob"}
+            "bob@example.com": {"name": "Bob"},
             # and no data for celia@example.com
         }
         self.message.merge_global_data = {
@@ -966,7 +966,7 @@ class SendGridBackendAnymailFeatureTests(SendGridBackendMockAPITestCase):
         self.message.esp_extra = {"merge_field_format": ":{}"}
         self.message.merge_data = {
             "alice@example.com": {"name": "Alice", "group": "Developers"},
-            "bob@example.com": {"name": "Bob"}
+            "bob@example.com": {"name": "Bob"},
             # and no data for celia@example.com
         }
         self.message.merge_global_data = {
