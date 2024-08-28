@@ -15,7 +15,7 @@ from pathlib import Path
 
 from anymail import VERSION as PACKAGE_VERSION
 
-ON_READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
+ON_READTHEDOCS = os.environ.get("READTHEDOCS") == "True"
 DOCS_PATH = Path(__file__).parent
 PROJECT_ROOT_PATH = DOCS_PATH.parent
 
@@ -31,7 +31,12 @@ needs_sphinx = "1.0"
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.intersphinx", "sphinx.ext.extlinks", "sphinx_rtd_theme"]
+extensions = [
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.extlinks",
+    "sphinx_rtd_theme",
+    "sphinxcontrib.googleanalytics",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -95,6 +100,12 @@ pygments_style = "sphinx"
 
 
 # -- Options for HTML output ---------------------------------------------------
+
+# Set canonical URL from the Read the Docs Domain.
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+# Let templates know whether the build is running on Read the Docs.
+html_context = {"READTHEDOCS": ON_READTHEDOCS}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -271,14 +282,23 @@ intersphinx_mapping = {
     "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
 }
 
+# -- Options for Google Analytics -------------------------------------------
 
+googleanalytics_id = os.environ.get("GOOGLE_ANALYTICS_ID", "")
+googleanalytics_enabled = bool(googleanalytics_id)
+
+if not googleanalytics_enabled:
+    # Work around https://github.com/sphinx-contrib/googleanalytics/issues/14.
+    googleanalytics_id = "IGNORED"
+
+
+# -- App setup --------------------------------------------------------------
 def setup(app):
     app.add_css_file("anymail-theme.css")
     # Inline <script> for anymail-config.js to avoid non-async JS load:
     # app.add_js_file("anymail-config.js")
     anymail_config_js = (DOCS_PATH / "_static/anymail-config.js").read_text()
     app.add_js_file(None, body=anymail_config_js)
-    app.add_js_file("version-alert.js", **{"async": "async"})
     app.add_js_file("table-formatting.js", **{"async": "async"})
     app.add_js_file("https://unpkg.com/rate-the-docs", **{"async": "async"})
 

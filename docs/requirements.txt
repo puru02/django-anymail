@@ -4,3 +4,4 @@ Pygments~=2.16.1
 readme-renderer~=41.0
 sphinx~=7.2
 sphinx-rtd-theme~=2.0.0
+sphinxcontrib-googleanalytics~=0.4
