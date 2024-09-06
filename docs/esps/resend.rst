@@ -182,8 +182,12 @@ anyway---see :ref:`unsupported-features`.
   tracking features can only be configured at the domain level
   in Resend's control panel.
 
-**No delayed sending**
-  Resend does not support :attr:`~anymail.message.AnymailMessage.send_at`.
+**No attachments with delayed sending**
+  Resend does not support attachments or batch sending features when using
+  :attr:`~anymail.message.AnymailMessage.send_at`.
+
+  .. versionchanged:: 12.0
+      Resend now supports :attr:`~anymail.message.AnymailMessage.send_at`.
 
 **No envelope sender**
   Resend does not support specifying the

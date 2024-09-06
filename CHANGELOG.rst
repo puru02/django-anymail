@@ -36,6 +36,11 @@ Breaking changes
 
 * Require **Django 4.0 or later** and Python 3.8 or later.
 
+Features
+~~~~~~~~
+
+* **Resend:** Add support for ``send_at``.
+
 Other
 ~~~~~
 

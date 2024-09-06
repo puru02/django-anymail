@@ -73,6 +73,8 @@ class ResendBackendIntegrationTests(AnymailTestMixin, SimpleTestCase):
             headers={"X-Anymail-Test": "value", "X-Anymail-Count": 3},
             metadata={"meta1": "simple string", "meta2": 2},
             tags=["tag 1", "tag 2"],
+            # Resend supports send_at or attachments, but not both at once.
+            # send_at=datetime.now() + timedelta(minutes=2),
         )
         message.attach_alternative("<p>HTML content</p>", "text/html")
 

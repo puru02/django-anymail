@@ -266,8 +266,16 @@ class ResendPayload(RequestsPayload):
         )
         self.metadata = metadata  # may be needed for batch send in serialize_data
 
-    # Resend doesn't support delayed sending
-    # def set_send_at(self, send_at):
+    def set_send_at(self, send_at):
+        try:
+            # Resend can't handle microseconds; truncate to milliseconds if necessary.
+            send_at = send_at.isoformat(
+                timespec="milliseconds" if send_at.microsecond else "seconds"
+            )
+        except AttributeError:
+            # User is responsible for formatting their own string
+            pass
+        self.data["scheduled_at"] = send_at
 
     def set_tags(self, tags):
         # Send tags using a custom X-Tags header.
