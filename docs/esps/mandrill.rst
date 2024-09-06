@@ -143,6 +143,32 @@ Limitations and quirks
   (Verified and reported to MailChimp support 4/2022;
   see `Anymail discussion #257`_ for more details.)
 
+**Cc and bcc depend on "preserve_recipients"**
+  Mandrill's handing of ``cc`` and ``bcc`` addresses depends on whether its
+  ``preserve_recipients`` option is enabled for the message.
+
+  * When preserve recipients is True, a single message is sent to all recipients.
+    The *To* and *Cc* headers list all ``to`` and ``cc`` addresses, and the message
+    is blind copied to all ``bcc`` addresses. (This is usually how people
+    expect ``cc`` and ``bcc`` to work.)
+
+  * When preserve recipients if False, Mandrill sends multiple copies of the
+    message, one per recipient. Each message has *only* that recipient's address
+    in the *To* header (even for ``cc`` and ``bcc`` addresses), so recipients
+    do not see each others' email addresses.
+
+  The default for ``preserve_recipients`` depends on Mandrill's account level
+  setting "Expose the list of recipients when sending to multiple addresses"
+  (checked sets preserve recipients to True). However, Anymail overrides this
+  setting to ``False`` for any messages that use
+  :ref:`batch sending <mandrill-templates>` features.
+
+  For individual non-batch messages, you can override your account default
+  using Anymail's :ref:`esp_extra <mandrill-esp-extra>`:
+  ``message.esp_extra = {"message": {"preserve_recipients": True}}``.
+  You can also use Anymail's :ref:`send-defaults` setting to override it for all
+  non-batch messages.
+
 **No merge headers support**
   Mandrill's API does not provide a way to support Anymail's
   :attr:`~anymail.message.AnymailMessage.merge_headers`.

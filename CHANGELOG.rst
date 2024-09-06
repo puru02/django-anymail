@@ -36,6 +36,16 @@ Breaking changes
 
 * Require **Django 4.0 or later** and Python 3.8 or later.
 
+Other
+~~~~~
+
+* **Mandrill (docs):** Explain how ``cc`` and ``bcc`` handling depends on
+  Mandrill's "preserve recipients" option. (Thanks to `@dgilmanAIDENTIFIED`_
+  for reporting the issue.)
+
+* **Postal (docs):** Update links to Postal's new documentation site.
+  (Thanks to `@jmduke`_.)
+
 
 v11.1
 -----
@@ -1717,6 +1727,7 @@ Features
 .. _@izimobil: https://github.com/izimobil
 .. _@janneThoft: https://github.com/janneThoft
 .. _@jc-ee: https://github.com/jc-ee
+.. _@jmduke: https://github.com/jmduke
 .. _@joshkersey: https://github.com/joshkersey
 .. _@kareemcoding: https://github.com/kareemcoding
 .. _@kika115: https://github.com/kika115
