@@ -5,9 +5,8 @@ Anymail: Django email integration for transactional ESPs
     * Github: project page, exactly as it appears here
     * Docs: shared-intro section gets included in docs/index.rst
             quickstart section gets included in docs/quickstart.rst
-    * PyPI: project page (via setup.py long_description),
-            with several edits to freeze it to the specific PyPI release
-            (see long_description_from_readme in setup.py)
+    * PyPI: project page (via pyproject.toml readme; see also
+            hatch_build.py which edits in the release version number)
     You can use docutils 1.0 markup, but *not* any Sphinx additions.
     GitHub rst supports code-block, but *no other* block directives.
 
@@ -28,14 +27,17 @@ a consistent API that avoids locking your code to one specific ESP
 Anymail currently supports these ESPs:
 
 * **Amazon SES**
-* **Mailgun**
-* **Mailjet**
-* **Mandrill** (MailChimp transactional)
+* **Brevo** (formerly SendinBlue)
+* **MailerSend**
+* **Mailgun** (Sinch transactional email)
+* **Mailjet** (Sinch transactional email)
+* **Mandrill** (MailChimp transactional email)
 * **Postal** (self-hosted ESP)
-* **Postmark**
-* **SendGrid**
-* **SendinBlue**
-* **SparkPost**
+* **Postmark** (ActiveCampaign transactional email)
+* **Resend**
+* **SendGrid** (Twilio transactional email)
+* **SparkPost** (Bird transactional email)
+* **Unisender Go**
 
 Anymail includes:
 
@@ -78,6 +80,7 @@ The package is released under the BSD license.
 **Resources**
 
 * Full documentation: https://anymail.dev/en/stable/
+* Help and troubleshooting: https://anymail.dev/en/stable/help/
 * Package on PyPI: https://pypi.org/project/django-anymail/
 * Project on Github: https://github.com/anymail/django-anymail
 * Changelog: https://anymail.dev/en/stable/changelog/

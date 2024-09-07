@@ -3,7 +3,7 @@
 SparkPost
 =========
 
-Anymail integrates with the `SparkPost`_ email service, using their
+Anymail integrates with the Bird `SparkPost`_ email service, using their
 `Transmissions API`_.
 
 .. versionchanged:: 8.0
@@ -206,6 +206,38 @@ Limitations and quirks
 
   .. versionadded:: 8.0
 
+**Extra header limitations**
+  SparkPost's API silently ignores certain email headers (specified via
+  Django's :ref:`headers or extra_headers <message-headers>` or Anymail's
+  :attr:`~anymail.message.AnymailMessage.merge_headers`). In particular,
+  attempts to provide a custom :mailheader:`List-Unsubscribe` header will
+  not work; the message will be sent with SparkPost's own subscription
+  management headers. (The list of allowed custom headers does not seem
+  to be documented.)
+
+.. _sparkpost-template-limitations:
+
+**Features incompatible with template_id**
+  When sending with a :attr:`~anymail.message.AnymailMessage.template_id`,
+  SparkPost doesn't support attachments, inline images, extra headers,
+  :attr:`!reply_to`, :attr:`!cc` recipients, or overriding the
+  :attr:`!from_email`, :attr:`!subject`, or body (text or html) when
+  sending the message. Some of these can be defined in the template itself,
+  but SparkPost (often) silently drops them when supplied to their
+  Transmissions send API.
+
+  .. versionchanged:: 11.0
+
+    Using features incompatible with :attr:`!template_id` will raise an
+    :exc:`~anymail.exceptions.AnymailUnsupportedFeature` error. In earlier
+    releases, Anymail would pass the incompatible content to SparkPost's
+    API, which in many cases would silently ignore it and send the message
+    anyway.
+
+  These limitations only apply when using stored templates (with a template_id),
+  not when using SparkPost's template language for on-the-fly templating
+  in a message's subject, body, etc.
+
 **Envelope sender may use domain only**
   Anymail's :attr:`~anymail.message.AnymailMessage.envelope_sender` is used to
   populate SparkPost's `'return_path'` parameter. Anymail supplies the full
@@ -237,7 +269,8 @@ and :ref:`batch sending <batch-send>` with per-recipient merge data.
 You can use a SparkPost stored template by setting a message's
 :attr:`~anymail.message.AnymailMessage.template_id` to the
 template's unique id. (When using a stored template, SparkPost prohibits
-setting the EmailMessage's subject, text body, or html body.)
+setting the EmailMessage's subject, text body, or html body, and has
+:ref:`several other limitations <sparkpost-template-limitations>`.)
 
 Alternatively, you can refer to merge fields directly in an EmailMessage's
 subject, body, and other fields---the message itself is used as an
@@ -255,6 +288,7 @@ message attributes.
           to=["alice@example.com", "Bob <bob@example.com>"]
       )
       message.template_id = "11806290401558530"  # SparkPost id
+      message.from_email = None  # must set after constructor (see below)
       message.merge_data = {
           'alice@example.com': {'name': "Alice", 'order_no': "12345"},
           'bob@example.com': {'name': "Bob", 'order_no': "54321"},
@@ -270,6 +304,9 @@ message attributes.
           },
       }
 
+When using a :attr:`~anymail.message.AnymailMessage.template_id`, you must set the
+message's :attr:`!from_email` to ``None`` as shown above. SparkPost does not permit
+specifying the from address at send time when using a stored template.
 
 See `SparkPost's substitutions reference`_ for more information on templates and
 batch send with SparkPost. If you need the special `"dynamic" keys for nested substitutions`_,

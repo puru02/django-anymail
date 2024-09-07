@@ -1,4 +1,7 @@
-# (Pygments defaulted "python" to Python 2 before v2.5.0; it doesn't use semver)
-Pygments~=2.9.0
-sphinx~=4.0
-sphinx-rtd-theme~=0.5.2
+# Packages required only for building docs
+
+Pygments~=2.16.1
+readme-renderer~=41.0
+sphinx~=7.2
+sphinx-rtd-theme~=2.0.0
+sphinxcontrib-googleanalytics~=0.4

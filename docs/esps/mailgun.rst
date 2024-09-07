@@ -3,7 +3,7 @@
 Mailgun
 =======
 
-Anymail integrates with the `Mailgun <https://mailgun.com>`_
+Anymail integrates with the Sinch `Mailgun <https://mailgun.com>`_
 transactional email service, using their `messages REST API`_.
 
 .. note::
@@ -34,8 +34,7 @@ in your settings.py.
 
 .. rubric:: MAILGUN_API_KEY
 
-Required for sending. Your Mailgun "Private API key" from the Mailgun
-`API security settings`_:
+Required for sending:
 
   .. code-block:: python
 
@@ -43,6 +42,37 @@ Required for sending. Your Mailgun "Private API key" from the Mailgun
           ...
           "MAILGUN_API_KEY": "<your API key>",
       }
+
+The key can be either:
+
+* (recommended) a domain-level Mailgun "Sending API key," found in Mailgun's dashboard
+  under "Sending" > "Domain settings" > "Sending API keys" (make sure the correct
+  domain is selected in the popup at top right!)
+* an account-level "Mailgun API key" from your Mailgun `API security settings`_.
+
+The account-level API key permits sending from any verified domain,
+but it also allows access to all other Mailgun APIs for your account
+(which Anymail doesn't need).
+
+The domain-level sending API key is preferred if you send from only
+a single domain. With multiple domains, either use an account API key,
+or supply the sending API key for a default domain in settings.py and
+use Django's :func:`~django.core.mail.get_connection` to substitute
+a different sending API key for other domains:
+
+    .. code-block:: python
+
+        from django.core.mail import EmailMessage, get_connection
+        # By default, use the settings.py MAILGUN_API_KEY:
+        message1 = EmailMessage(from_email="support@default-domain.example.com", ...)
+        message1.send()
+
+        # Use a different sending API key for this message:
+        connection = get_connection(api_key=SENDING_API_KEY_FOR_OTHER_DOMAIN)
+        message2 = EmailMessage(from_email="support@other-domain.example.com", ...,
+                                connection=connection)
+        message2.send()
+
 
 Anymail will also look for ``MAILGUN_API_KEY`` at the
 root of the settings file if neither ``ANYMAIL["MAILGUN_API_KEY"]``
@@ -115,7 +145,7 @@ Email sender domain
 -------------------
 
 Mailgun's API requires identifying the sender domain.
-By default, Anymail uses the domain of each messages's `from_email`
+By default, Anymail uses the domain of each message's `from_email`
 (e.g., "example.com" for "from\@example.com").
 
 You will need to override this default if you are using
@@ -217,18 +247,23 @@ Limitations and quirks
   obvious reasons, only the domain portion applies. You can use anything before
   the @, and it will be ignored.
 
-**Using merge_metadata with merge_data**
+**Using merge_metadata and merge_headers with merge_data**
   If you use both Anymail's :attr:`~anymail.message.AnymailMessage.merge_data`
   and :attr:`~anymail.message.AnymailMessage.merge_metadata` features, make sure your
-  merge_data keys do not start with ``v:``. (It's a good idea anyway to avoid colons
-  and other special characters in merge_data keys, as this isn't generally portable
-  to other ESPs.)
+  :attr:`~!anymail.message.AnymailMessage.merge_data` keys do not start with ``v:``.
+
+  Similarly, if you use Anymail's :attr:`~anymail.message.AnymailMessage.merge_headers`
+  together with :attr:`~anymail.message.AnymailMessage.merge_data`, make sure your
+  :attr:`~!anymail.message.AnymailMessage.merge_data` keys do not start with ``h:``.
+
+  (It's a good idea anyway to avoid colons and other special characters in merge data
+  keys, as this isn't generally portable to other ESPs.)
 
   The same underlying Mailgun feature ("recipient-variables") is used to implement
-  both Anymail features. To avoid conflicts, Anymail prepends ``v:`` to recipient
-  variables needed for merge_metadata. (This prefix is stripped as Mailgun prepares
-  the message to send, so it won't be present in your Mailgun API logs or the metadata
-  that is sent to tracking webhooks.)
+  all three Anymail features. To avoid conflicts, Anymail prepends ``v:`` to recipient
+  variables needed for merge metadata, and ``h:`` for merge headers recipient variables.
+  (These prefixes are stripped as Mailgun prepares the message to send, so won't appear
+  in your Mailgun API logs or the metadata that is sent to tracking webhooks.)
 
 **Additional limitations on merge_data with template_id**
   If you are using Mailgun's stored handlebars templates (Anymail's
@@ -521,16 +556,19 @@ forwarding url) with Mailgun inbound routing.
 
 .. note::
 
-    Anymail also supports Mailgun's "fully-parsed" inbound message format, but the "raw MIME"
-    version is preferred to get the most accurate representation of any received email.
-    Using raw MIME also avoids a limitation in Django's :mimetype:`multipart/form-data` handling
-    that can strip attachments with certain filenames (and inline images without filenames).
+    Anymail supports both of Mailgun's "fully-parsed" and "raw MIME" inbound
+    message formats. The raw MIME version is preferred to get the most accurate
+    representation of any received email. Using raw MIME also avoids a limitation
+    in Django's :mimetype:`multipart/form-data` handling that can strip attachments
+    with certain filenames (and inline images without filenames).
 
-    To use Mailgun's fully-parsed format, change :samp:`.../inbound_mime/` to just
-    :samp:`.../inbound/` at the end of the route forwarding url.
+    * To use raw MIME (recommended), the route forwarding url should end with
+      :samp:`…/inbound_mime/` as shown above.
+    * To use fully-parsed format (not recommended), omit the :samp:`_mime` so
+      the route forwarding url ends with just :samp:`…/inbound/`.
 
     .. versionchanged:: 8.6
-       Using Mailgun's full-parsed (not raw MIME) inbound message format is no longer recommended.
+       Using Mailgun's fully-parsed inbound message format is no longer recommended.
 
 
 .. _Receiving, Forwarding and Storing Messages:

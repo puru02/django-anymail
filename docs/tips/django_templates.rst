@@ -51,5 +51,8 @@ in Django:
 
 * :pypi:`django-templated-mail`, :pypi:`django-mail-templated`, or :pypi:`django-mail-templated-simple`
   for building messages from sets of Django templates.
+* :pypi:`django-pony-express` for a class-based approach to building messages
+  from a Django template.
+* :pypi:`emark` for building messages from Markdown.
 * :pypi:`premailer` for inlining css before sending
 * :pypi:`BeautifulSoup`, :pypi:`lxml`, or :pypi:`html2text` for auto-generating plaintext from your html

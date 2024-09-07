@@ -1,7 +1,7 @@
 Anymail documentation privacy
 =============================
 
-Anymail's documentation site at `anymail.readthedocs.io`_ is hosted by
+Anymail's documentation site at `anymail.dev`_ is hosted by
 **Read the Docs**. Please see the `Read the Docs Privacy Policy`_ for more
 about what information Read the Docs collects and how they use it.
 
@@ -42,8 +42,8 @@ documentation site can be emailed to *privacy\<at>anymail\<dot>dev*.
 see :ref:`help` if you need assistance with your code.)
 
 
-.. _anymail.readthedocs.io:
-    https://anymail.readthedocs.io/
+.. _anymail.dev:
+    https://anymail.dev/
 .. _Read the Docs Privacy Policy:
     https://docs.readthedocs.io/en/latest/privacy-policy.html
 .. _Safeguarding your data:

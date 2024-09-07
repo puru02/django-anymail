@@ -3,33 +3,34 @@ name: integration-test
 on:
   pull_request:
   push:
-    branches: [ "main", "v[0-9]*" ]
-    tags: [ "v[0-9]*" ]
+    branches: ["main", "v[0-9]*"]
+    tags: ["v[0-9]*"]
   workflow_dispatch:
   schedule:
     # Weekly test (on branch main) every Thursday at 12:15 UTC.
     # (Used to monitor compatibility with ESP API changes.)
     - cron: "15 12 * * 4"
 
-
 jobs:
   skip_duplicate_runs:
     # Avoid running the live integration tests twice on the same code
     # (to conserve limited sending quotas in the live ESP test accounts)
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
+    continue-on-error: true
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        # uses: fkirc/skip-duplicate-actions@v3.4.1
-        uses: fkirc/skip-duplicate-actions@f75dd6564bb646f95277dc8c3b80612e46a4a1ea
+        # uses: fkirc/skip-duplicate-actions@v5.3.1
+        uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf
         with:
           concurrent_skipping: "same_content_newer"
           cancel_others: "true"
 
   test:
     name: ${{ matrix.config.tox }} ${{ matrix.config.options }}
-    runs-on: ubuntu-20.04
+    # Ubuntu 22.04 runner includes Python 3.10
+    runs-on: ubuntu-22.04
     needs: skip_duplicate_runs
     if: needs.skip_duplicate_runs.outputs.should_skip != 'true'
     timeout-minutes: 15
@@ -39,28 +40,31 @@ jobs:
         # Live API integration tests are run on only one representative Python/Django version
         # combination, to avoid rapidly consuming the testing accounts' entire send allotments.
         config:
-          - { tox: django40-py310-amazon_ses, python: "3.10" }
-          - { tox: django40-py310-mailgun, python: "3.10" }
-          - { tox: django40-py310-mailjet, python: "3.10" }
-          - { tox: django40-py310-mandrill, python: "3.10" }
-          - { tox: django40-py310-postal, python: "3.10" }
-          - { tox: django40-py310-postmark, python: "3.10" }
-          - { tox: django40-py310-sendgrid, python: "3.10" }
-          - { tox: django40-py310-sendinblue, python: "3.10" }
-          - { tox: django40-py310-sparkpost, python: "3.10" }
+          - { tox: django41-py310-amazon_ses, python: "3.10" }
+          - { tox: django41-py310-brevo, python: "3.10" }
+          - { tox: django41-py310-mailersend, python: "3.10" }
+          - { tox: django41-py310-mailgun, python: "3.10" }
+          - { tox: django41-py310-mailjet, python: "3.10" }
+          - { tox: django41-py310-mandrill, python: "3.10" }
+          - { tox: django41-py310-postal, python: "3.10" }
+          - { tox: django41-py310-postmark, python: "3.10" }
+          - { tox: django41-py310-resend, python: "3.10" }
+          - { tox: django41-py310-sendgrid, python: "3.10" }
+          - { tox: django41-py310-sparkpost, python: "3.10" }
+          - { tox: django41-py310-unisender_go, python: "3.10" }
 
     steps:
       - name: Get code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.config.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.config.python }}
       - name: Install tox
         run: |
           set -x
           python --version
-          pip install tox
+          pip install 'tox<4'
           tox --version
       - name: Test ${{ matrix.config.tox }}
         run: |
@@ -74,6 +78,10 @@ jobs:
           ANYMAIL_TEST_AMAZON_SES_DOMAIN: ${{ secrets.ANYMAIL_TEST_AMAZON_SES_DOMAIN }}
           ANYMAIL_TEST_AMAZON_SES_REGION_NAME: ${{ secrets.ANYMAIL_TEST_AMAZON_SES_REGION_NAME }}
           ANYMAIL_TEST_AMAZON_SES_SECRET_ACCESS_KEY: ${{ secrets.ANYMAIL_TEST_AMAZON_SES_SECRET_ACCESS_KEY }}
+          ANYMAIL_TEST_BREVO_API_KEY: ${{ secrets.ANYMAIL_TEST_BREVO_API_KEY }}
+          ANYMAIL_TEST_BREVO_DOMAIN: ${{ vars.ANYMAIL_TEST_BREVO_DOMAIN }}
+          ANYMAIL_TEST_MAILERSEND_API_TOKEN: ${{ secrets.ANYMAIL_TEST_MAILERSEND_API_TOKEN }}
+          ANYMAIL_TEST_MAILERSEND_DOMAIN: ${{ secrets.ANYMAIL_TEST_MAILERSEND_DOMAIN }}
           ANYMAIL_TEST_MAILGUN_API_KEY: ${{ secrets.ANYMAIL_TEST_MAILGUN_API_KEY }}
           ANYMAIL_TEST_MAILGUN_DOMAIN: ${{ secrets.ANYMAIL_TEST_MAILGUN_DOMAIN }}
           ANYMAIL_TEST_MAILJET_API_KEY: ${{ secrets.ANYMAIL_TEST_MAILJET_API_KEY }}
@@ -84,10 +92,14 @@ jobs:
           ANYMAIL_TEST_POSTMARK_DOMAIN: ${{ secrets.ANYMAIL_TEST_POSTMARK_DOMAIN }}
           ANYMAIL_TEST_POSTMARK_SERVER_TOKEN: ${{ secrets.ANYMAIL_TEST_POSTMARK_SERVER_TOKEN }}
           ANYMAIL_TEST_POSTMARK_TEMPLATE_ID: ${{ secrets.ANYMAIL_TEST_POSTMARK_TEMPLATE_ID }}
+          ANYMAIL_TEST_RESEND_API_KEY: ${{ secrets.ANYMAIL_TEST_RESEND_API_KEY }}
+          ANYMAIL_TEST_RESEND_DOMAIN: ${{ secrets.ANYMAIL_TEST_RESEND_DOMAIN }}
           ANYMAIL_TEST_SENDGRID_API_KEY: ${{ secrets.ANYMAIL_TEST_SENDGRID_API_KEY }}
           ANYMAIL_TEST_SENDGRID_DOMAIN: ${{ secrets.ANYMAIL_TEST_SENDGRID_DOMAIN }}
           ANYMAIL_TEST_SENDGRID_TEMPLATE_ID: ${{ secrets.ANYMAIL_TEST_SENDGRID_TEMPLATE_ID }}
-          ANYMAIL_TEST_SENDINBLUE_API_KEY: ${{ secrets.ANYMAIL_TEST_SENDINBLUE_API_KEY }}
-          ANYMAIL_TEST_SENDINBLUE_DOMAIN: ${{ secrets.ANYMAIL_TEST_SENDINBLUE_DOMAIN }}
           ANYMAIL_TEST_SPARKPOST_API_KEY: ${{ secrets.ANYMAIL_TEST_SPARKPOST_API_KEY }}
           ANYMAIL_TEST_SPARKPOST_DOMAIN: ${{ secrets.ANYMAIL_TEST_SPARKPOST_DOMAIN }}
+          ANYMAIL_TEST_UNISENDER_GO_API_KEY: ${{ secrets.ANYMAIL_TEST_UNISENDER_GO_API_KEY }}
+          ANYMAIL_TEST_UNISENDER_GO_API_URL: ${{ vars.ANYMAIL_TEST_UNISENDER_GO_API_URL }}
+          ANYMAIL_TEST_UNISENDER_GO_DOMAIN: ${{ vars.ANYMAIL_TEST_UNISENDER_GO_DOMAIN }}
+          ANYMAIL_TEST_UNISENDER_GO_TEMPLATE_ID: ${{ vars.ANYMAIL_TEST_UNISENDER_GO_TEMPLATE_ID }}

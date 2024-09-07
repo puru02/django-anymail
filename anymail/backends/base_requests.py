@@ -3,9 +3,10 @@ from urllib.parse import urljoin
 import requests
 
 from anymail.utils import get_anymail_setting
-from .base import AnymailBaseBackend, BasePayload
+
 from .._version import __version__
 from ..exceptions import AnymailRequestsAPIError
+from .base import AnymailBaseBackend, BasePayload
 
 
 class AnymailRequestsBackend(AnymailBaseBackend):
@@ -16,7 +17,9 @@ class AnymailRequestsBackend(AnymailBaseBackend):
     def __init__(self, api_url, **kwargs):
         """Init options from Django settings"""
         self.api_url = api_url
-        self.timeout = get_anymail_setting('requests_timeout', kwargs=kwargs, default=30)
+        self.timeout = get_anymail_setting(
+            "requests_timeout", kwargs=kwargs, default=30
+        )
         super().__init__(**kwargs)
         self.session = None
 
@@ -25,17 +28,12 @@ class AnymailRequestsBackend(AnymailBaseBackend):
             return False  # already exists
 
         try:
-            self.session = requests.Session()
-        except requests.RequestException:
+            self.session = self.create_session()
+        except Exception:
             if not self.fail_silently:
                 raise
-        else:
-            self.session.headers["User-Agent"] = "django-anymail/{version}-{esp} {orig}".format(
-                esp=self.esp_name.lower(), version=__version__,
-                orig=self.session.headers.get("User-Agent", ""))
-            if self.debug_api_requests:
-                self.session.hooks['response'].append(self._dump_api_request)
-            return True
+
+        return True
 
     def close(self):
         if self.session is None:
@@ -49,13 +47,39 @@ class AnymailRequestsBackend(AnymailBaseBackend):
             self.session = None
 
     def _send(self, message):
-        if self.session is None:
+        if self.session:
+            return super()._send(message)
+        elif self.fail_silently:
+            # create_session failed
+            return False
+        else:
             class_name = self.__class__.__name__
             raise RuntimeError(
                 "Session has not been opened in {class_name}._send. "
                 "(This is either an implementation error in {class_name}, "
-                "or you are incorrectly calling _send directly.)".format(class_name=class_name))
-        return super()._send(message)
+                "or you are incorrectly calling _send directly.)".format(
+                    class_name=class_name
+                )
+            )
+
+    def create_session(self):
+        """Create the requests.Session object used by this instance of the backend.
+        If subclassed, you can modify the Session returned from super() to give
+        it your own configuration.
+
+        This must return an instance of requests.Session."""
+        session = requests.Session()
+
+        session.headers["User-Agent"] = "django-anymail/{version}-{esp} {orig}".format(
+            esp=self.esp_name.lower(),
+            version=__version__,
+            orig=session.headers.get("User-Agent", ""),
+        )
+
+        if self.debug_api_requests:
+            session.hooks["response"].append(self._dump_api_request)
+
+        return session
 
     def post_to_esp(self, payload, message):
         """Post payload to ESP send API endpoint, and return the raw response.
@@ -67,16 +91,20 @@ class AnymailRequestsBackend(AnymailBaseBackend):
         Can raise AnymailRequestsAPIError for HTTP errors in the post
         """
         params = payload.get_request_params(self.api_url)
-        params.setdefault('timeout', self.timeout)
+        params.setdefault("timeout", self.timeout)
         try:
             response = self.session.request(**params)
         except requests.RequestException as err:
             # raise an exception that is both AnymailRequestsAPIError
             # and the original requests exception type
-            exc_class = type('AnymailRequestsAPIError', (AnymailRequestsAPIError, type(err)), {})
+            exc_class = type(
+                "AnymailRequestsAPIError", (AnymailRequestsAPIError, type(err)), {}
+            )
             raise exc_class(
-                "Error posting to %s:" % params.get('url', '<missing url>'),
-                email_message=message, payload=payload) from err
+                "Error posting to %s:" % params.get("url", "<missing url>"),
+                email_message=message,
+                payload=payload,
+            ) from err
         self.raise_for_status(response, payload, message)
         return response
 
@@ -89,8 +117,8 @@ class AnymailRequestsBackend(AnymailBaseBackend):
         """
         if response.status_code < 200 or response.status_code >= 300:
             raise AnymailRequestsAPIError(
-                email_message=message, payload=payload,
-                response=response, backend=self)
+                email_message=message, payload=payload, response=response, backend=self
+            )
 
     def deserialize_json_response(self, response, payload, message):
         """Deserialize an ESP API response that's in json.
@@ -100,9 +128,13 @@ class AnymailRequestsBackend(AnymailBaseBackend):
         try:
             return response.json()
         except ValueError as err:
-            raise AnymailRequestsAPIError("Invalid JSON in %s API response" % self.esp_name,
-                                          email_message=message, payload=payload, response=response,
-                                          backend=self) from err
+            raise AnymailRequestsAPIError(
+                "Invalid JSON in %s API response" % self.esp_name,
+                email_message=message,
+                payload=payload,
+                response=response,
+                backend=self,
+            ) from err
 
     @staticmethod
     def _dump_api_request(response, **kwargs):
@@ -113,31 +145,52 @@ class AnymailRequestsBackend(AnymailBaseBackend):
         # in http://docs.python-requests.org/en/v3.0.0/api/#api-changes)
         request = response.request  # a PreparedRequest
         print("\n===== Anymail API request")
-        print("{method} {url}\n{headers}".format(
-            method=request.method, url=request.url,
-            headers="".join("{header}: {value}\n".format(header=header, value=value)
-                            for (header, value) in request.headers.items()),
-        ))
+        print(
+            "{method} {url}\n{headers}".format(
+                method=request.method,
+                url=request.url,
+                headers="".join(
+                    "{header}: {value}\n".format(header=header, value=value)
+                    for (header, value) in request.headers.items()
+                ),
+            )
+        )
         if request.body is not None:
-            body_text = (request.body if isinstance(request.body, str)
-                         else request.body.decode("utf-8", errors="replace")
-                         ).replace("\r\n", "\n")
+            body_text = (
+                request.body
+                if isinstance(request.body, str)
+                else request.body.decode("utf-8", errors="replace")
+            ).replace("\r\n", "\n")
             print(body_text)
         print("\n----- Response")
-        print("HTTP {status} {reason}\n{headers}\n{body}".format(
-            status=response.status_code, reason=response.reason,
-            headers="".join("{header}: {value}\n".format(header=header, value=value)
-                            for (header, value) in response.headers.items()),
-            body=response.text,  # Let Requests decode body content for us
-        ))
+        print(
+            "HTTP {status} {reason}\n{headers}\n{body}".format(
+                status=response.status_code,
+                reason=response.reason,
+                headers="".join(
+                    "{header}: {value}\n".format(header=header, value=value)
+                    for (header, value) in response.headers.items()
+                ),
+                body=response.text,  # Let Requests decode body content for us
+            )
+        )
 
 
 class RequestsPayload(BasePayload):
     """Abstract Payload for AnymailRequestsBackend"""
 
-    def __init__(self, message, defaults, backend,
-                 method="POST", params=None, data=None,
-                 headers=None, files=None, auth=None):
+    def __init__(
+        self,
+        message,
+        defaults,
+        backend,
+        method="POST",
+        params=None,
+        data=None,
+        headers=None,
+        files=None,
+        auth=None,
+    ):
         self.method = method
         self.params = params
         self.data = data
@@ -171,7 +224,10 @@ class RequestsPayload(BasePayload):
         )
 
     def get_api_endpoint(self):
-        """Returns a str that should be joined to the backend's api_url for sending this payload."""
+        """
+        Returns a str that should be joined to the backend's api_url
+        for sending this payload.
+        """
         return None
 
     def serialize_data(self):

@@ -1,5 +1,5 @@
-from django.urls import include, re_path
+from django.urls import include, path
 
 urlpatterns = [
-    re_path(r'^anymail/', include('anymail.urls')),
+    path("anymail/", include("anymail.urls")),
 ]

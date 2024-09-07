@@ -142,15 +142,15 @@ If you want to use Anymail's inbound or tracking webhooks:
 
    .. code-block:: python
 
-      from django.urls import include, re_path
+      from django.urls import include, path
 
       urlpatterns = [
           ...
-          re_path(r'^anymail/', include('anymail.urls')),
+          path("anymail/", include("anymail.urls")),
       ]
 
    (You can change the "anymail" prefix in the first parameter to
-   :func:`~django.urls.re_path` if you'd like the webhooks to be served
+   :func:`~django.urls.path` if you'd like the webhooks to be served
    at some other URL. Just match whatever you use in the webhook URL you give
    your ESP in the next step.)
 

@@ -3,12 +3,18 @@
 Postmark
 ========
 
-Anymail integrates with the `Postmark`_ transactional email service,
+Anymail integrates with the ActiveCampaign `Postmark`_ transactional email service,
 using their `HTTP email API`_.
+
+.. sidebar:: Alternatives
+
+    The :pypi:`postmarker` package includes a `Postmarker Django EmailBackend`_.
+    Depending on your needs, it may be more appropriate than Anymail.
 
 .. _Postmark: https://postmarkapp.com/
 .. _HTTP email API: https://postmarkapp.com/developer/api/email-api
-
+.. _Postmarker Django EmailBackend:
+   https://postmarker.readthedocs.io/en/stable/django.html
 
 Settings
 --------
@@ -244,19 +250,28 @@ a `dict` of Postmark `delivery <https://postmarkapp.com/developer/webhooks/deliv
 Inbound webhook
 ---------------
 
-If you want to receive email from Postmark through Anymail's normalized :ref:`inbound <inbound>`
-handling, follow Postmark's `Inbound Processing`_ guide to configure
-an inbound server pointing to Anymail's inbound webhook.
+To receive email from Postmark through Anymail's normalized
+:ref:`inbound <inbound>` handling, follow Postmark's guide to
+`Configure an inbound server`_ that posts to Anymail's inbound webhook.
 
-The InboundHookUrl setting will be:
+In their step 4, set the inbound webhook URL to:
 
    :samp:`https://{random}:{random}@{yoursite.example.com}/anymail/postmark/inbound/`
 
      * *random:random* is an :setting:`ANYMAIL_WEBHOOK_SECRET` shared secret
      * *yoursite.example.com* is your Django site
 
-Anymail handles the "parse an email" part of Postmark's instructions for you, but you'll
-likely want to work through the other sections to set up a custom inbound domain, and
-perhaps configure inbound spam blocking.
+We recommend enabling the "Include raw email content in JSON payload" checkbox.
+Anymail's inbound handling supports either choice, but raw email is preferred
+to get the most accurate representation of any received message. (If you are using
+Postmark's server API, this is the ``RawEmailEnabled`` option.)
 
+.. versionchanged:: 10.0
+   Added handling for Postmark's "include raw email content".
+
+You may also want to read through the "Inbound domain forwarding" and
+"Configure inbound blocking" sections of Postmark's `Inbound Processing`_ guide.
+
+.. _Configure an inbound server:
+   https://postmarkapp.com/developer/user-guide/inbound/configure-an-inbound-server
 .. _Inbound Processing: https://postmarkapp.com/developer/user-guide/inbound

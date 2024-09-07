@@ -1,6 +1,5 @@
 /* Anymail modifications to sphinx-rtd-theme styles */
 
-
 /* Sticky table first column (used for ESP feature matrix) */
 table.sticky-left td:first-of-type,
 table.sticky-left th:first-of-type {
@@ -18,6 +17,18 @@ table.sticky-left th:first-of-type[colspan] > p {
   left: 17px; /* (.wy-table $table-padding-size) + (docutils border="1" in html) */
 }
 
+/* Fix footnote stacking in sticky table */
+.rst-content .citation-reference,
+.rst-content .footnote-reference {
+  /* Original (but `position: relative` creates a new stacking context):
+  vertical-align: baseline;
+  position: relative;
+  top: -.4em;
+  */
+  vertical-align: 0.4em;
+  position: static;
+  top: initial; /* (not relevant with `position: static`) */
+}
 
 /* Show code cross-reference links as clickable $link-color (blue).
 
@@ -27,11 +38,11 @@ table.sticky-left th:first-of-type[colspan] > p {
 
    This makes code.xref's inside an <a> use standard link coloring instead.
 
-   [1]: https://github.com/rtfd/sphinx_rtd_theme/blob/0.4.2/sass/_theme_rst.sass#L293-L294
-   [2]: https://github.com/rtfd/sphinx_rtd_theme/blob/0.4.2/sass/_theme_rst.sass#L287-L289
+   [1]: https://github.com/readthedocs/sphinx_rtd_theme/blob/2.0.0/src/sass/_theme_rst.sass#L484
+   [2]: https://github.com/readthedocs/sphinx_rtd_theme/blob/2.0.0/src/sass/_theme_rst.sass#L477
 
-   Related: https://github.com/rtfd/sphinx_rtd_theme/issues/153
-            https://github.com/rtfd/sphinx_rtd_theme/issues/92
+   Related: https://github.com/readthedocs/sphinx_rtd_theme/issues/153
+            https://github.com/readthedocs/sphinx_rtd_theme/issues/92
 */
 .rst-content a code.xref {
   color: inherit;
@@ -44,15 +55,31 @@ table.sticky-left th:first-of-type[colspan] > p {
   color: inherit;
 }
 
-
 /* Inline search forms (Anymail addition) */
 .anymail-inline-search-form {
   margin-top: -1em;
   margin-bottom: 1em;
 }
-.anymail-inline-search-form input[type=search] {
+.anymail-inline-search-form input[type="search"] {
   width: 280px;
   max-width: 100%;
   border-radius: 50px;
   padding: 6px 12px;
+}
+
+/* Improve list item spacing in "open" lists.
+   https://github.com/readthedocs/sphinx_rtd_theme/issues/1555
+
+   Undoes this rule in non-.simple lists:
+   https://github.com/readthedocs/sphinx_rtd_theme/blob/2.0.0/src/sass/_theme_rst.sass#L174-L175
+*/
+.rst-content .section ol:not(.simple) > li > p:only-child,
+.rst-content .section ol:not(.simple) > li > p:only-child:last-child,
+.rst-content .section ul:not(.simple) > li > p:only-child,
+.rst-content .section ul:not(.simple) > li > p:only-child:last-child,
+.rst-content section ol:not(.simple) > li > p:only-child,
+.rst-content section ol:not(.simple) > li > p:only-child:last-child,
+.rst-content section ul:not(.simple) > li > p:only-child,
+.rst-content section ul:not(.simple) > li > p:only-child:last-child {
+  margin-bottom: 12px;
 }

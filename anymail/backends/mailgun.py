@@ -1,28 +1,10 @@
 from datetime import datetime
-from email.utils import encode_rfc2231
 from urllib.parse import quote
 
-from requests import Request
-
-from .base_requests import AnymailRequestsBackend, RequestsPayload
 from ..exceptions import AnymailError, AnymailRequestsAPIError
 from ..message import AnymailRecipientStatus
 from ..utils import get_anymail_setting, rfc2822date
-
-
-# Feature-detect whether requests (urllib3) correctly uses RFC 7578 encoding for non-
-# ASCII filenames in Content-Disposition headers. (This was fixed in urllib3 v1.25.)
-# See MailgunPayload.get_request_params for info (and a workaround on older versions).
-# (Note: when this workaround is removed, please also remove the "old_urllib3" tox envs.)
-def is_requests_rfc_5758_compliant():
-    request = Request(method='POST', url='https://www.example.com',
-                      files=[('attachment', ('\N{NOT SIGN}.txt', 'test', 'text/plain'))])
-    prepared = request.prepare()
-    form_data = prepared.body  # bytes
-    return b'filename*=' not in form_data
-
-
-REQUESTS_IS_RFC_7578_COMPLIANT = is_requests_rfc_5758_compliant()
+from .base_requests import AnymailRequestsBackend, RequestsPayload
 
 
 class EmailBackend(AnymailRequestsBackend):
@@ -35,11 +17,22 @@ class EmailBackend(AnymailRequestsBackend):
     def __init__(self, **kwargs):
         """Init options from Django settings"""
         esp_name = self.esp_name
-        self.api_key = get_anymail_setting('api_key', esp_name=esp_name, kwargs=kwargs, allow_bare=True)
-        self.sender_domain = get_anymail_setting('sender_domain', esp_name=esp_name, kwargs=kwargs,
-                                                 allow_bare=True, default=None)
-        api_url = get_anymail_setting('api_url', esp_name=esp_name, kwargs=kwargs,
-                                      default="https://api.mailgun.net/v3")
+        self.api_key = get_anymail_setting(
+            "api_key", esp_name=esp_name, kwargs=kwargs, allow_bare=True
+        )
+        self.sender_domain = get_anymail_setting(
+            "sender_domain",
+            esp_name=esp_name,
+            kwargs=kwargs,
+            allow_bare=True,
+            default=None,
+        )
+        api_url = get_anymail_setting(
+            "api_url",
+            esp_name=esp_name,
+            kwargs=kwargs,
+            default="https://api.mailgun.net/v3",
+        )
         if not api_url.endswith("/"):
             api_url += "/"
         super().__init__(api_url, **kwargs)
@@ -55,9 +48,13 @@ class EmailBackend(AnymailRequestsBackend):
                 "Unknown sender domain {sender_domain!r}.\n"
                 "Check the domain is verified with Mailgun, and that the ANYMAIL"
                 " MAILGUN_API_URL setting {api_url!r} is the correct region.".format(
-                    sender_domain=payload.sender_domain, api_url=self.api_url),
-                email_message=message, payload=payload,
-                response=response, backend=self)
+                    sender_domain=payload.sender_domain, api_url=self.api_url
+                ),
+                email_message=message,
+                payload=payload,
+                response=response,
+                backend=self,
+            )
 
         super().raise_for_status(response, payload, message)
 
@@ -68,8 +65,11 @@ class EmailBackend(AnymailRequestsBackend):
                 "Invalid Mailgun API endpoint %r.\n"
                 "Check your ANYMAIL MAILGUN_SENDER_DOMAIN"
                 " and MAILGUN_API_URL settings." % response.url,
-                email_message=message, payload=payload,
-                response=response, backend=self)
+                email_message=message,
+                payload=payload,
+                response=response,
+                backend=self,
+            )
 
     def parse_recipient_status(self, response, payload, message):
         # The *only* 200 response from Mailgun seems to be:
@@ -86,20 +86,27 @@ class EmailBackend(AnymailRequestsBackend):
             message_id = parsed_response["id"]
             mailgun_message = parsed_response["message"]
         except (KeyError, TypeError) as err:
-            raise AnymailRequestsAPIError("Invalid Mailgun API response format",
-                                          email_message=message, payload=payload, response=response,
-                                          backend=self) from err
+            raise AnymailRequestsAPIError(
+                "Invalid Mailgun API response format",
+                email_message=message,
+                payload=payload,
+                response=response,
+                backend=self,
+            ) from err
         if not mailgun_message.startswith("Queued"):
-            raise AnymailRequestsAPIError("Unrecognized Mailgun API message '%s'" % mailgun_message,
-                                          email_message=message, payload=payload, response=response,
-                                          backend=self)
+            raise AnymailRequestsAPIError(
+                "Unrecognized Mailgun API message '%s'" % mailgun_message,
+                email_message=message,
+                payload=payload,
+                response=response,
+                backend=self,
+            )
         # Simulate a per-recipient status of "queued":
         status = AnymailRecipientStatus(message_id=message_id, status="queued")
         return {recipient.addr_spec: status for recipient in payload.all_recipients}
 
 
 class MailgunPayload(RequestsPayload):
-
     def __init__(self, message, defaults, backend, *args, **kwargs):
         auth = ("api", backend.api_key)
         self.sender_domain = backend.sender_domain
@@ -110,49 +117,31 @@ class MailgunPayload(RequestsPayload):
         self.merge_global_data = {}
         self.metadata = {}
         self.merge_metadata = {}
+        self.merge_headers = {}
         self.to_emails = []
 
         super().__init__(message, defaults, backend, auth=auth, *args, **kwargs)
 
     def get_api_endpoint(self):
         if self.sender_domain is None:
-            raise AnymailError("Cannot call Mailgun unknown sender domain. "
-                               "Either provide valid `from_email`, "
-                               "or set `message.esp_extra={'sender_domain': 'example.com'}`",
-                               backend=self.backend, email_message=self.message, payload=self)
-        if '/' in self.sender_domain or '%2f' in self.sender_domain.lower():
+            raise AnymailError(
+                "Cannot call Mailgun unknown sender domain. "
+                "Either provide valid `from_email`, "
+                "or set `message.esp_extra={'sender_domain': 'example.com'}`",
+                backend=self.backend,
+                email_message=self.message,
+                payload=self,
+            )
+        if "/" in self.sender_domain or "%2f" in self.sender_domain.lower():
             # Mailgun returns a cryptic 200-OK "Mailgun Magnificent API" response
             # if '/' (or even %-encoded '/') confuses it about the API endpoint.
-            raise AnymailError("Invalid '/' in sender domain '%s'" % self.sender_domain,
-                               backend=self.backend, email_message=self.message, payload=self)
-        return "%s/messages" % quote(self.sender_domain, safe='')
-
-    def get_request_params(self, api_url):
-        params = super().get_request_params(api_url)
-        non_ascii_filenames = [filename
-                               for (field, (filename, content, mimetype)) in params["files"]
-                               if filename is not None and not isascii(filename)]
-        if non_ascii_filenames and not REQUESTS_IS_RFC_7578_COMPLIANT:
-            # Workaround https://github.com/requests/requests/issues/4652:
-            # Mailgun expects RFC 7578 compliant multipart/form-data, and is confused
-            # by Requests/urllib3's improper use of RFC 2231 encoded filename parameters
-            # ("filename*=utf-8''...") in Content-Disposition headers.
-            # The workaround is to pre-generate the (non-compliant) form-data body, and
-            # replace 'filename*={RFC 2231 encoded}' with 'filename="{UTF-8 bytes}"'.
-            # Replace _only_ the filenames that will be problems (not all "filename*=...")
-            # to minimize potential side effects--e.g., in attached messages that might
-            # have their own attachments with (correctly) RFC 2231 encoded filenames.
-            prepared = Request(**params).prepare()
-            form_data = prepared.body  # bytes
-            for filename in non_ascii_filenames:  # text
-                rfc2231_filename = encode_rfc2231(filename, charset="utf-8")
-                form_data = form_data.replace(
-                    b'filename*=' + rfc2231_filename.encode("utf-8"),
-                    b'filename="' + filename.encode("utf-8") + b'"')
-            params["data"] = form_data
-            params["headers"]["Content-Type"] = prepared.headers["Content-Type"]  # multipart/form-data; boundary=...
-            params["files"] = None  # these are now in the form_data body
-        return params
+            raise AnymailError(
+                "Invalid '/' in sender domain '%s'" % self.sender_domain,
+                backend=self.backend,
+                email_message=self.message,
+                payload=self,
+            )
+        return "%s/messages" % quote(self.sender_domain, safe="")
 
     def serialize_data(self):
         self.populate_recipient_variables()
@@ -181,32 +170,41 @@ class MailgunPayload(RequestsPayload):
     #     are available as `%recipient.KEY%` virtually anywhere in the message
     #     (including header fields and other parameters).
     #
-    # Anymail needs both mechanisms to map its normalized metadata and template merge_data
-    # features to Mailgun:
+    # Anymail needs both mechanisms to map its normalized metadata and template
+    # merge_data features to Mailgun:
     # (1) Anymail's `metadata` maps directly to Mailgun's custom data, where it can be
     #     accessed from webhooks.
     # (2) Anymail's `merge_metadata` (per-recipient metadata for batch sends) maps
     #     *indirectly* through recipient-variables to Mailgun's custom data. To avoid
-    #     conflicts, the recipient-variables mapping prepends 'v:' to merge_metadata keys.
-    #     (E.g., Mailgun's custom-data "user" is set to "%recipient.v:user", which picks
-    #     up its per-recipient value from Mailgun's `recipient-variables[to_email]["v:user"]`.)
-    # (3) Anymail's `merge_data` (per-recipient template substitutions) maps directly to
-    #     Mailgun's `recipient-variables`, where it can be referenced in on-the-fly templates.
-    # (4) Anymail's `merge_global_data` (global template substitutions) is copied to
-    #     Mailgun's `recipient-variables` for every recipient, as the default for missing
-    #     `merge_data` keys.
+    #     conflicts, the recipient-variables mapping prepends 'v:' to merge_metadata
+    #     keys. (E.g., Mailgun's custom-data "user" is set to "%recipient.v:user",
+    #     which picks up its per-recipient value from Mailgun's
+    #     `recipient-variables[to_email]["v:user"]`.)
+    # (3) Anymail's `merge_data` (per-recipient template substitutions) maps directly
+    #     to Mailgun's `recipient-variables`, where it can be referenced in on-the-fly
+    #     templates.
+    # (4) Anymail's `merge_global_data` (global template substitutions) is copied
+    #     to Mailgun's `recipient-variables` for every recipient, as the default
+    #     for missing `merge_data` keys.
     # (5) Only if a stored template is used, `merge_data` and `merge_global_data` are
-    #     *also* mapped *indirectly* through recipient-variables to Mailgun's custom data,
-    #     where they can be referenced in handlebars {{substitutions}}.
+    #     *also* mapped *indirectly* through recipient-variables to Mailgun's custom
+    #     data, where they can be referenced in handlebars {{substitutions}}.
     #     (E.g., Mailgun's custom-data "name" is set to "%recipient.name%", which picks
-    #     up its per-recipient value from Mailgun's `recipient-variables[to_email]["name"]`.)
+    #     up its per-recipient value from Mailgun's
+    #     `recipient-variables[to_email]["name"]`.)
+    # (6) Anymail's `merge_headers` (per-recipient headers) maps to recipient-variables
+    #     prepended with 'h:'.
     #
     # If Anymail's `merge_data`, `template_id` (stored templates) and `metadata` (or
-    # `merge_metadata`) are used together, there's a possibility of conflicting keys in
-    # Mailgun's custom data. Anymail treats that conflict as an unsupported feature error.
+    # `merge_metadata`) are used together, there's a possibility of conflicting keys
+    # in Mailgun's custom data. Anymail treats that conflict as an unsupported feature
+    # error.
 
     def populate_recipient_variables(self):
-        """Populate Mailgun recipient-variables and custom data from merge data and metadata"""
+        """
+        Populate Mailgun recipient-variables and custom data
+        from merge data and metadata
+        """
         # (numbers refer to detailed explanation above)
         # Mailgun parameters to construct:
         recipient_variables = {}
@@ -217,53 +215,100 @@ class MailgunPayload(RequestsPayload):
 
         # (2) merge_metadata --> Mailgun custom_data via recipient_variables
         if self.merge_metadata:
-            def vkey(key):  # 'v:key'
-                return 'v:{}'.format(key)
 
-            merge_metadata_keys = flatset(  # all keys used in any recipient's merge_metadata
-                recipient_data.keys() for recipient_data in self.merge_metadata.values())
-            custom_data.update({  # custom_data['key'] = '%recipient.v:key%' indirection
-                key: '%recipient.{}%'.format(vkey(key))
-                for key in merge_metadata_keys})
-            base_recipient_data = {  # defaults for each recipient must cover all keys
-                vkey(key): self.metadata.get(key, '')
-                for key in merge_metadata_keys}
+            def vkey(key):  # 'v:key'
+                return "v:{}".format(key)
+
+            # all keys used in any recipient's merge_metadata:
+            merge_metadata_keys = flatset(
+                recipient_data.keys() for recipient_data in self.merge_metadata.values()
+            )
+            # custom_data['key'] = '%recipient.v:key%' indirection:
+            custom_data.update(
+                {key: "%recipient.{}%".format(vkey(key)) for key in merge_metadata_keys}
+            )
+            # defaults for each recipient must cover all keys:
+            base_recipient_data = {
+                vkey(key): self.metadata.get(key, "") for key in merge_metadata_keys
+            }
             for email in self.to_emails:
                 this_recipient_data = base_recipient_data.copy()
-                this_recipient_data.update({
-                    vkey(key): value
-                    for key, value in self.merge_metadata.get(email, {}).items()})
+                this_recipient_data.update(
+                    {
+                        vkey(key): value
+                        for key, value in self.merge_metadata.get(email, {}).items()
+                    }
+                )
                 recipient_variables.setdefault(email, {}).update(this_recipient_data)
 
         # (3) and (4) merge_data, merge_global_data --> Mailgun recipient_variables
         if self.merge_data or self.merge_global_data:
-            merge_data_keys = flatset(  # all keys used in any recipient's merge_data
-                recipient_data.keys() for recipient_data in self.merge_data.values())
+            # all keys used in any recipient's merge_data:
+            merge_data_keys = flatset(
+                recipient_data.keys() for recipient_data in self.merge_data.values()
+            )
             merge_data_keys = merge_data_keys.union(self.merge_global_data.keys())
-            base_recipient_data = {  # defaults for each recipient must cover all keys
-                key: self.merge_global_data.get(key, '')
-                for key in merge_data_keys}
+            # defaults for each recipient must cover all keys:
+            base_recipient_data = {
+                key: self.merge_global_data.get(key, "") for key in merge_data_keys
+            }
             for email in self.to_emails:
                 this_recipient_data = base_recipient_data.copy()
                 this_recipient_data.update(self.merge_data.get(email, {}))
                 recipient_variables.setdefault(email, {}).update(this_recipient_data)
 
             # (5) if template, also map Mailgun custom_data to per-recipient_variables
-            if self.data.get('template') is not None:
+            if self.data.get("template") is not None:
                 conflicts = merge_data_keys.intersection(custom_data.keys())
                 if conflicts:
                     self.unsupported_feature(
-                        "conflicting merge_data and metadata keys (%s) when using template_id"
-                        % ', '.join("'%s'" % key for key in conflicts))
-                custom_data.update({  # custom_data['key'] = '%recipient.key%' indirection
-                    key: '%recipient.{}%'.format(key)
-                    for key in merge_data_keys})
+                        "conflicting merge_data and metadata keys (%s)"
+                        " when using template_id"
+                        % ", ".join("'%s'" % key for key in conflicts)
+                    )
+                # custom_data['key'] = '%recipient.key%' indirection:
+                custom_data.update(
+                    {key: "%recipient.{}%".format(key) for key in merge_data_keys}
+                )
+
+        # (6) merge_headers --> Mailgun recipient_variables via 'h:'-prefixed keys
+        if self.merge_headers:
+
+            def hkey(field_name):  # 'h:Field-Name'
+                return "h:{}".format(field_name.title())
+
+            merge_header_fields = flatset(
+                recipient_headers.keys()
+                for recipient_headers in self.merge_headers.values()
+            )
+            merge_header_defaults = {
+                # existing h:Field-Name value (from extra_headers), or empty string
+                field: self.data.get(hkey(field), "")
+                for field in merge_header_fields
+            }
+            self.data.update(
+                # Set up 'h:Field-Name': '%recipient.h:Field-Name%' indirection
+                {
+                    hvar: f"%recipient.{hvar}%"
+                    for hvar in [hkey(field) for field in merge_header_fields]
+                }
+            )
+
+            for email in self.to_emails:
+                # Each recipient's recipient_variables needs _all_ merge header fields
+                recipient_headers = merge_header_defaults.copy()
+                recipient_headers.update(self.merge_headers.get(email, {}))
+                recipient_variables_for_headers = {
+                    hkey(field): value for field, value in recipient_headers.items()
+                }
+                recipient_variables.setdefault(email, {}).update(
+                    recipient_variables_for_headers
+                )
 
         # populate Mailgun params
-        self.data.update({'v:%s' % key: value
-                          for key, value in custom_data.items()})
+        self.data.update({"v:%s" % key: value for key, value in custom_data.items()})
         if recipient_variables or self.is_batch():
-            self.data['recipient-variables'] = self.serialize_json(recipient_variables)
+            self.data["recipient-variables"] = self.serialize_json(recipient_variables)
 
     #
     # Payload construction
@@ -285,9 +330,11 @@ class MailgunPayload(RequestsPayload):
         assert recipient_type in ["to", "cc", "bcc"]
         if emails:
             self.data[recipient_type] = [email.address for email in emails]
-            self.all_recipients += emails  # used for backend.parse_recipient_status
-        if recipient_type == 'to':
-            self.to_emails = [email.addr_spec for email in emails]  # used for populate_recipient_variables
+            # used for backend.parse_recipient_status:
+            self.all_recipients += emails
+        if recipient_type == "to":
+            # used for populate_recipient_variables:
+            self.to_emails = [email.addr_spec for email in emails]
 
     def set_subject(self, subject):
         self.data["subject"] = subject
@@ -298,15 +345,16 @@ class MailgunPayload(RequestsPayload):
             self.data["h:Reply-To"] = reply_to
 
     def set_extra_headers(self, headers):
-        for key, value in headers.items():
-            self.data["h:%s" % key] = value
+        for field, value in headers.items():
+            self.data["h:%s" % field.title()] = value
 
     def set_text_body(self, body):
         self.data["text"] = body
 
     def set_html_body(self, body):
         if "html" in self.data:
-            # second html body could show up through multiple alternatives, or html body + alternative
+            # second html body could show up through multiple alternatives,
+            # or html body + alternative
             self.unsupported_feature("multiple html parts")
         self.data["html"] = body
 
@@ -330,9 +378,7 @@ class MailgunPayload(RequestsPayload):
             name = attachment.name
             if not name:
                 self.unsupported_feature("attachments without filenames")
-        self.files.append(
-            (field, (name, attachment.content, attachment.mimetype))
-        )
+        self.files.append((field, (name, attachment.content, attachment.mimetype)))
 
     def set_envelope_sender(self, email):
         # Only the domain is used
@@ -375,6 +421,9 @@ class MailgunPayload(RequestsPayload):
     def set_merge_metadata(self, merge_metadata):
         # Processed at serialization time (to allow combining with merge_data)
         self.merge_metadata = merge_metadata
+
+    def set_merge_headers(self, merge_headers):
+        self.merge_headers = merge_headers
 
     def set_esp_extra(self, extra):
         self.data.update(extra)
